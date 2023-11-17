@@ -111,14 +111,6 @@ function Arrow() {
   );
 }
 
-function Score({ score }: { score: number }) {
-  return (
-    <div className="fixed top-0 right-0 pr-2 text-5xl font-bold text-white">
-      Score: {score}
-    </div>
-  );
-}
-
 function Unicorn({ onFinished }: { onFinished?: () => void}) {
   const [isAnimating, setIsAnimating] = React.useState(true);
 
