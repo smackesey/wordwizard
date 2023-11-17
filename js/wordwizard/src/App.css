@@ -1,0 +1,94 @@
+@font-face {
+  font-family: 'Noto Color Emoji';
+  src: url('./fonts/NotoColorEmoji-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.cursor {
+  font-family: 'Noto Color Emoji';
+}
+
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.arc-container {
+  width: 600px; /* Diameter of the arc */
+  height: 600px; /* Diameter of the arc */
+  position: absolute;
+  animation: moveInArc 1s linear 1; /* Adjust duration as needed */
+}
+
+.arc-image {
+  position: absolute;
+  bottom: 0; /* Position at the bottom of the arc */
+  width: 100px; /* Adjust image size as needed */
+  height: auto;
+  animation: keepOrientation 1s linear 1; /* Counter-rotate the image */
+}
+
+@keyframes moveInArc {
+  0% {
+    transform: rotate(30deg) translateY(-300px); /* Start at 45 degrees */
+  }
+  100% {
+    transform: rotate(135deg) translateY(-300px); /* End at 135 degrees */
+  }
+}
+
+@keyframes keepOrientation {
+  0% {
+    transform: rotate(-30deg); /* Counteract starting rotation */
+  }
+  100% {
+    transform: rotate(-135deg); /* Counteract ending rotation */
+  }
+}
+
+.arrow-container {
+  animation: extend 1s linear 1;
+  animation-fill-mode: forwards;
+}
+
+.arrow {
+  height: 50px;
+  width: 100%;
+}
+
+@keyframes extend {
+  100% {
+    width: 100%;
+  }
+}
