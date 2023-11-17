@@ -10,8 +10,21 @@ const UNICORN_DURATION = 1000;
 
 type Mode = "letter" | "word";
 type Direction = "forward" | "backward";
+type Keymap = "QWERTY" | "DVORAK";
 
-const ACTIONS: Map<string, string> = new Map([
+const QWERTY_ACTIONS: Map<string, string> = new Map([
+  ["i", "toggle-completed"],
+  ["j", "previous-letter"],
+  [";", "next-letter"],
+  ["l", "previous-uncompleted-word"],
+  ["k", "next-uncompleted-word"],
+  [",", "previous-word"],
+  ["m", "next-word"],
+  ["o", "toggle-mode"],
+  ["p", "reset"],
+]);
+
+const DVORAK_ACTIONS: Map<string, string> = new Map([
   ["c", "toggle-completed"],
   ["h", "previous-letter"],
   ["s", "next-letter"],
@@ -20,7 +33,12 @@ const ACTIONS: Map<string, string> = new Map([
   ["v", "previous-word"],
   ["w", "next-word"],
   ["r", "toggle-mode"],
-  ["f", "reset"],
+  ["l", "reset"],
+]);
+
+const KEYMAPS: Map<Keymap, Map<string, string>> = new Map([
+  ["QWERTY", QWERTY_ACTIONS],
+  ["DVORAK", DVORAK_ACTIONS],
 ]);
 
 function getBgClass(character: string) {
@@ -178,9 +196,10 @@ function cycleWordIndex(wordList: string[], wordIndex: number, direction: Direct
   }
 }
 
-function HelpModal() {
+function HelpModal({keymapKey}: {keymapKey: Keymap}) {
   const [isOpen, setIsOpen] = React.useState(false);
 
+  const keymap = KEYMAPS.get(keymapKey)!;
   const toggleModal = () => setIsOpen(!isOpen);
 
   return (
@@ -189,7 +208,7 @@ function HelpModal() {
         <div className="border-2 border-black rounded-md p-2 bg-gray-400">
           <div className="space-y-1 > *">
             <p>Key bindings</p>
-            {Array.from(ACTIONS.entries()).map(([key, action]) => (
+            {Array.from(keymap.entries()).map(([key, action]) => (
               <div key={key} className="flex items-center space-x-2 > *">
                 <Key character={key} />
                 <div>{action}</div>
@@ -198,12 +217,24 @@ function HelpModal() {
           </div>
         </div>
       )}
-      <button className="rounded-full border-black border-2 w-8 h-8 font-bold" onClick={toggleModal}>?</button>
+      <button className="rounded-full cursor-pointer bg-gray-400 border-black border-2 w-8 h-8 font-bold" onClick={toggleModal}>?</button>
+    </div>
+  );
+}
+
+function KeymapToggle({keymapKey, setKeymapKey}: {keymapKey: Keymap; setKeymapKey: (keymapKey: Keymap) => void}) {
+  return (
+    <div
+      className="fixed top-0 right-0 m-3 p-3 cursor-pointer bg-gray-400 rounded-md border-black border-2"
+      onClick={() => setKeymapKey(keymapKey === "QWERTY" ? "DVORAK" : "QWERTY")}
+    >
+      {keymapKey}
     </div>
   );
 }
 
 function App() {
+  const [keymapKey, setKeymapKey] = React.useState<Keymap>("DVORAK");
   const [wordListKey, setWordListKey] = React.useState(WORD_LISTS.keys().next().value);
   const [mode, setMode] = React.useState<Mode>("letter");
   const [wordIndex, setWordIndex] = React.useState(0);
@@ -215,9 +246,9 @@ function App() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const wordList = WORD_LISTS.get(wordListKey)!;
       const word = wordList[wordIndex];
-      console.log("word is", word);
-      const action = ACTIONS.get(event.key);
-      console.log("action is", action);
+      const keymap = KEYMAPS.get(keymapKey)!;
+      console.log("keymap key", keymapKey);
+      const action = keymap.get(event.key);
       if (action === "toggle-mode") {
         setLetterIndex(0);
         setMode(mode === "letter" ? "word" : "letter");
@@ -269,14 +300,15 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [wordListKey, mode, wordIndex, letterIndex, completedWords]);
+  }, [wordListKey, mode, wordIndex, letterIndex, completedWords, keymapKey]);
 
   const wordList = WORD_LISTS.get(wordListKey)!;
   return (
     <div className="flex w-screen h-screen bg-black">
       <Sidebar wordIndex={wordIndex} wordListKey={wordListKey} setWordListKey={setWordListKey} completedWords={completedWords}/>
       <Board mode={mode} word={wordList[wordIndex]} letterIndex={letterIndex} score={5} showUnicorn={showUnicorn} setShowUnicorn={setShowUnicorn}/>
-      <HelpModal />
+      <HelpModal keymapKey={keymapKey} />
+      <KeymapToggle keymapKey={keymapKey} setKeymapKey={setKeymapKey}/>
     </div>
   );
 }
