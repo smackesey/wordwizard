@@ -53,6 +53,24 @@ function getBgClass(character: string) {
   }
 }
 
+function Scoreboard({ score }: { score: number }) {
+  return (
+    <div className="absolute bg-gray-400 p-3 rounded-lg border-2 border-black bottom-8 flex flex-col items-center justify-center w-4/5 space-y-2 > *">
+      <div className="text-3xl font-bold">Score: {score}</div>
+      <div className="flex flex-wrap space-x-1 > *">
+        {Array.from([...Array(score).keys()]).map((_, i) => (
+          <img
+            src="unicorn.webp"
+            alt="Unicorn"
+            key={i}
+            className="my-1 mx-1 w-12 h-12 rounded-lg"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Tile({ letter, dimmed }: { letter: string; dimmed?: boolean }) {
   const bgClass = getBgClass(letter);
   const opacityClass = dimmed ? 'bg-opacity-20 text-gray-500' : '';
@@ -89,17 +107,21 @@ function Sidebar({
   wordListKey,
   setWordListKey,
   completedWords,
+  showCompleted,
+  setShowCompleted,
 }: {
   wordIndex: number;
   wordListKey: string;
   completedWords: string[];
   setWordListKey: (wordListKey: string) => void;
+  showCompleted: boolean;
+  setShowCompleted: (show: boolean) => void;
 }) {
-  const wordList = WORD_LISTS.get(wordListKey)!;
+  const wordList = getWordList(wordListKey, completedWords, showCompleted);
   return (
     <div className="bg-gray-300 p-2 w-1/4 flex flex-col">
       <div className="text-5xl font-bold mb-2">Remaining words</div>
-      <div className="space-y-2 > *">
+      <div className="space-y-2 > * overflow-y-scroll">
         {wordList.map((word, i) => {
           const borderClasses = i === wordIndex ? 'border-2 border-black rounded-md' : '';
           return (
@@ -115,6 +137,14 @@ function Sidebar({
         setItem={setWordListKey}
         title="Word lists"
       />
+      <div className="flex justify-between">
+        <div>Completed</div>
+        <input
+          type="checkbox"
+          checked={showCompleted}
+          onChange={(event) => setShowCompleted(event.target.checked)}
+        />
+      </div>
     </div>
   );
 }
@@ -167,13 +197,10 @@ function Arrow() {
 }
 
 function Unicorn({ onFinished }: { onFinished?: () => void }) {
-  const [isAnimating, setIsAnimating] = React.useState(true);
-
   React.useEffect(() => {
     const animationDuration = UNICORN_DURATION; // Duration in milliseconds (5 seconds in this case)
 
     const timer = setTimeout(() => {
-      setIsAnimating(false);
       if (onFinished) {
         onFinished();
       }
@@ -182,13 +209,9 @@ function Unicorn({ onFinished }: { onFinished?: () => void }) {
     return () => clearTimeout(timer);
   }, [onFinished]);
 
-  if (!isAnimating) {
-    return null; // Don't render anything when the animation is finished
-  }
-
   return (
     <div className="arc-container">
-      <img src="unicorn.webp" alt="Unicorn" className="arc-image" />
+      <img src="unicorn.webp" alt="Unicorn" className="rounded-3xl arc-image" />
     </div>
   );
 }
@@ -199,25 +222,35 @@ function Board({
   letterIndex,
   score,
   showUnicorn,
-  setShowUnicorn,
+  unicornFinished,
+  completedWords,
 }: {
   mode: Mode;
   word: string;
   letterIndex: number;
   score: number;
   showUnicorn: boolean;
-  setShowUnicorn: (show: boolean) => void;
+  unicornFinished: () => void;
+  completedWords: string[];
 }) {
   const cursorWord =
     ' '.repeat(letterIndex) + CURSOR_CHAR + ' '.repeat(word.length - letterIndex - 1);
+
+  let secondRow;
+  if (mode === 'letter') {
+    secondRow = showUnicorn ? <div className="h-16" /> : <Word word={cursorWord} />;
+  } else {
+    secondRow = <Arrow />;
+  }
 
   return (
     <div className="relative bg-gray-500 flex-1 flex items-center justify-center">
       <div className="flex flex-col space-y-2 > *">
         <Word word={word} />
-        {mode === 'letter' ? <Word word={cursorWord} /> : <Arrow />}
+        {secondRow}
       </div>
-      {showUnicorn && <Unicorn onFinished={() => setShowUnicorn(false)} />}
+      {showUnicorn && <Unicorn onFinished={unicornFinished} />}
+      <Scoreboard score={completedWords.length} />
     </div>
   );
 }
@@ -295,6 +328,13 @@ function KeymapToggle({
   );
 }
 
+function getWordList(wordListKey: string, completedWords: string[], showCompleted: boolean) {
+  const fullWordList = WORD_LISTS.get(wordListKey)!;
+  return showCompleted
+    ? fullWordList
+    : fullWordList.filter((word) => !completedWords.includes(word));
+}
+
 function App() {
   const [keymapKey, setKeymapKey] = React.useState<Keymap>('DVORAK');
   const [wordListKey, setWordListKey] = React.useState(WORD_LISTS.keys().next().value);
@@ -302,11 +342,12 @@ function App() {
   const [wordIndex, setWordIndex] = React.useState(0);
   const [letterIndex, setLetterIndex] = React.useState(0);
   const [completedWords, setCompletedWords] = React.useState<string[]>([]);
+  const [showCompleted, setShowCompleted] = React.useState(false);
   const [showUnicorn, setShowUnicorn] = React.useState(false);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const wordList = WORD_LISTS.get(wordListKey)!;
+      const wordList = getWordList(wordListKey, completedWords, showCompleted);
       const word = wordList[wordIndex];
       const keymap = KEYMAPS.get(keymapKey)!;
       console.log('keymap key', keymapKey);
@@ -329,10 +370,12 @@ function App() {
         )!;
         setWordIndex(newWordIndex);
         setLetterIndex(0);
+        setMode('letter');
       } else if (action === 'next-word') {
         const newWordIndex = cycleWordIndex(wordList, wordIndex, 'forward')!;
         setWordIndex(newWordIndex);
         setLetterIndex(0);
+        setMode('letter');
       } else if (action === 'previous-uncompleted-word') {
         const newWordIndex = cycleUncompletedWordIndex(
           wordList,
@@ -342,26 +385,17 @@ function App() {
         )!;
         setWordIndex(newWordIndex);
         setLetterIndex(0);
+        setMode('letter');
       } else if (action === 'previous-word') {
         const newWordIndex = cycleWordIndex(wordList, wordIndex, 'backward')!;
         setWordIndex(newWordIndex);
         setLetterIndex(0);
+        setMode('letter');
       } else if (action === 'toggle-completed') {
         if (completedWords.includes(word)) {
           setCompletedWords(completedWords.filter((completedWord) => completedWord !== word));
         } else {
-          setCompletedWords([...completedWords, wordList[wordIndex]]);
-          const newWordIndex = cycleUncompletedWordIndex(
-            wordList,
-            completedWords,
-            wordIndex,
-            'backward',
-          )!;
           setShowUnicorn(true);
-          setTimeout(() => {
-            setWordIndex(newWordIndex);
-            setLetterIndex(0);
-          }, UNICORN_DURATION);
         }
       } else if (action === 'reset') {
         setCompletedWords([]);
@@ -377,15 +411,37 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [wordListKey, mode, wordIndex, letterIndex, completedWords, keymapKey]);
+  }, [wordListKey, mode, wordIndex, letterIndex, completedWords, keymapKey, showCompleted]);
 
-  const wordList = WORD_LISTS.get(wordListKey)!;
+  const wordList = getWordList(wordListKey, completedWords, showCompleted);
+
+  const unicornFinished = () => {
+    setShowUnicorn(false);
+    console.log('unicorn finished');
+    setCompletedWords([...completedWords, wordList[wordIndex]]);
+    console.log('completed words', completedWords);
+    if (showCompleted) {
+      const newWordIndex = cycleUncompletedWordIndex(
+        wordList,
+        completedWords,
+        wordIndex,
+        'forward',
+      )!;
+      console.log('new word index', newWordIndex);
+      setWordIndex(newWordIndex);
+    }
+    setLetterIndex(0);
+    setMode('letter');
+  };
+
   return (
-    <div className="flex w-screen h-screen bg-black">
+    <div className="flex w-screen h-screen bg-black overflow-hidden">
       <Sidebar
         wordIndex={wordIndex}
         wordListKey={wordListKey}
         setWordListKey={setWordListKey}
+        showCompleted={showCompleted}
+        setShowCompleted={setShowCompleted}
         completedWords={completedWords}
       />
       <Board
@@ -394,7 +450,8 @@ function App() {
         letterIndex={letterIndex}
         score={5}
         showUnicorn={showUnicorn}
-        setShowUnicorn={setShowUnicorn}
+        unicornFinished={unicornFinished}
+        completedWords={completedWords}
       />
       <HelpModal keymapKey={keymapKey} />
       <KeymapToggle keymapKey={keymapKey} setKeymapKey={setKeymapKey} />
