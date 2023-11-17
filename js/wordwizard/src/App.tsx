@@ -6,11 +6,13 @@ const CURSOR_CHAR = "\u261D";
 
 const VOWELS = ["a", "e", "i", "o", "u"];
 
+const UNICORN_DURATION = 1000;
+
 type Mode = "letter" | "word";
 type Direction = "forward" | "backward";
 
 const ACTIONS: Map<string, string> = new Map([
-  ["g", "toggle-completed"],
+  ["c", "toggle-completed"],
   ["h", "previous-letter"],
   ["s", "next-letter"],
   ["n", "previous-uncompleted-word"],
@@ -115,7 +117,7 @@ function Unicorn({ onFinished }: { onFinished?: () => void}) {
   const [isAnimating, setIsAnimating] = React.useState(true);
 
   React.useEffect(() => {
-    const animationDuration = 1000; // Duration in milliseconds (5 seconds in this case)
+    const animationDuration = UNICORN_DURATION; // Duration in milliseconds (5 seconds in this case)
     
     const timer = setTimeout(() => {
       setIsAnimating(false);
@@ -150,8 +152,8 @@ function Board({mode, word, letterIndex, score, showUnicorn, setShowUnicorn}: {m
         ) : (
           <Arrow />
         )}
-        {showUnicorn && <Unicorn onFinished={() => setShowUnicorn(false)} />}
       </div>
+      {showUnicorn && <Unicorn onFinished={() => setShowUnicorn(false)} />}
     </div>
   );
 }
@@ -247,9 +249,11 @@ function App() {
         } else {
           setCompletedWords([...completedWords, wordList[wordIndex]]);
           const newWordIndex = cycleUncompletedWordIndex(wordList, completedWords, wordIndex, 'backward')!;
-          setWordIndex(newWordIndex);
-          setLetterIndex(0);
           setShowUnicorn(true);
+          setTimeout(() => {
+            setWordIndex(newWordIndex);
+            setLetterIndex(0);
+          }, UNICORN_DURATION);
         }
       } else if (action === "reset") {
         setCompletedWords([]);
