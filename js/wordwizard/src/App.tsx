@@ -12,7 +12,7 @@ type Mode = 'letter' | 'word';
 type Direction = 'forward' | 'backward';
 type Keymap = 'QWERTY' | 'DVORAK';
 
-const LETTER_FORWARD_SOUND = new Audio('letter-forward-orig.wav');
+const LETTER_FORWARD_SOUND = new Audio('letter-forward.wav');
 const WORD_COMPLETE_SOUND = new Audio('word-complete.mp3');
 
 const QWERTY_ACTIONS: Map<string, string> = new Map([
