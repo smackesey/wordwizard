@@ -393,10 +393,13 @@ function App() {
           playSound(LETTER_FORWARD_SOUND);
         }
       } else if (action === 'previous-letter') {
+        let newPosition: number;
         if (mode === 'word') {
           setMode('letter');
+          newPosition = 0;
+        } else {
+          newPosition = letterIndex === 0 ? word.length - 1 : letterIndex - 1;
         }
-        const newPosition = letterIndex === 0 ? word.length - 1 : letterIndex - 1;
         setLetterIndex(newPosition);
       } else if (action === 'next-uncompleted-word') {
         const newWordIndex = cycleUncompletedWordIndex(
