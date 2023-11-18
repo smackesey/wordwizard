@@ -45,8 +45,9 @@ const KEYMAPS: Map<Keymap, Map<string, string>> = new Map([
 ]);
 
 function playSound(sound: HTMLAudioElement) {
+  // sound.currentTime = 0;
   if (sound === LETTER_FORWARD_SOUND) {
-    sound.currentTime = 0.05;
+    sound.currentTime = 0.1;
   } else {
     sound.currentTime = 0;
   }
@@ -388,10 +389,10 @@ function App() {
         } else {
           newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
         }
-        setLetterIndex(newPosition);
         if (newPosition !== 0) {
           playSound(LETTER_FORWARD_SOUND);
         }
+        setLetterIndex(newPosition);
       } else if (action === 'previous-letter') {
         let newPosition: number;
         if (mode === 'word') {
