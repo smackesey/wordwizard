@@ -12,6 +12,9 @@ type Mode = 'letter' | 'word';
 type Direction = 'forward' | 'backward';
 type Keymap = 'QWERTY' | 'DVORAK';
 
+const LETTER_FORWARD_SOUND = new Audio('letter-forward-orig.wav');
+const WORD_COMPLETE_SOUND = new Audio('word-complete.mp3');
+
 const QWERTY_ACTIONS: Map<string, string> = new Map([
   ['i', 'toggle-completed'],
   ['j', 'previous-letter'],
@@ -20,7 +23,7 @@ const QWERTY_ACTIONS: Map<string, string> = new Map([
   ['k', 'next-uncompleted-word'],
   [',', 'previous-word'],
   ['m', 'next-word'],
-  ['o', 'toggle-mode'],
+  ['o', 'word-mode'],
   ['p', 'reset'],
 ]);
 
@@ -32,7 +35,7 @@ const DVORAK_ACTIONS: Map<string, string> = new Map([
   ['t', 'next-uncompleted-word'],
   ['v', 'previous-word'],
   ['w', 'next-word'],
-  ['r', 'toggle-mode'],
+  ['r', 'word-mode'],
   ['l', 'reset'],
 ]);
 
@@ -40,6 +43,15 @@ const KEYMAPS: Map<Keymap, Map<string, string>> = new Map([
   ['QWERTY', QWERTY_ACTIONS],
   ['DVORAK', DVORAK_ACTIONS],
 ]);
+
+function playSound(sound: HTMLAudioElement) {
+  if (sound === LETTER_FORWARD_SOUND) {
+    sound.currentTime = 0.05;
+  } else {
+    sound.currentTime = 0;
+  }
+  sound.play();
+}
 
 function getBgClass(character: string) {
   if (character === ' ') {
@@ -55,7 +67,12 @@ function getBgClass(character: string) {
 
 function Scoreboard({ score }: { score: number }) {
   return (
-    <div className="absolute bg-gray-400 p-3 rounded-lg border-2 border-black bottom-8 flex flex-col items-center justify-center w-4/5 space-y-2 > *">
+    <div
+      className="
+      absolute bg-gray-400 p-3 rounded-lg border-2 border-black
+      bottom-8 flex flex-col items-center justify-center w-4/5 space-y-2 > *
+      "
+    >
       <div className="text-3xl font-bold">Score: {score}</div>
       <div className="flex flex-wrap space-x-1 > *">
         {Array.from([...Array(score).keys()]).map((_, i) => (
@@ -63,7 +80,7 @@ function Scoreboard({ score }: { score: number }) {
             src="unicorn.webp"
             alt="Unicorn"
             key={i}
-            className="my-1 mx-1 w-12 h-12 rounded-lg"
+            className="my-1 mx-1 w-12 h-12 rounded-lg transition-opacity"
           />
         ))}
       </div>
@@ -187,9 +204,12 @@ function UpwardDropdown({
   );
 }
 
-function Arrow() {
+function Arrow({ animationKey }: { animationKey: number }) {
   return (
-    <div className="arrow-container bg-white self-start rounded-md w-16 h-16 flex items-center p-2">
+    <div
+      key={animationKey}
+      className="arrow-container bg-white self-start rounded-md w-8 h-16 flex items-center p-2"
+    >
       <div className="h-1 flex-grow bg-black -mr-2" />
       <div className="text-2xl">&#9654;</div>
     </div>
@@ -220,18 +240,18 @@ function Board({
   mode,
   word,
   letterIndex,
-  score,
   showUnicorn,
   unicornFinished,
   completedWords,
+  arrowAnimationKey,
 }: {
   mode: Mode;
   word: string;
   letterIndex: number;
-  score: number;
   showUnicorn: boolean;
   unicornFinished: () => void;
   completedWords: string[];
+  arrowAnimationKey: number;
 }) {
   const cursorWord =
     ' '.repeat(letterIndex) + CURSOR_CHAR + ' '.repeat(word.length - letterIndex - 1);
@@ -240,7 +260,7 @@ function Board({
   if (mode === 'letter') {
     secondRow = showUnicorn ? <div className="h-16" /> : <Word word={cursorWord} />;
   } else {
-    secondRow = <Arrow />;
+    secondRow = <Arrow animationKey={arrowAnimationKey} />;
   }
 
   return (
@@ -344,6 +364,7 @@ function App() {
   const [completedWords, setCompletedWords] = React.useState<string[]>([]);
   const [showCompleted, setShowCompleted] = React.useState(false);
   const [showUnicorn, setShowUnicorn] = React.useState(false);
+  const [arrowAnimationKey, setArrowAnimationKey] = React.useState(0);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -352,13 +373,24 @@ function App() {
       const keymap = KEYMAPS.get(keymapKey)!;
       console.log('keymap key', keymapKey);
       const action = keymap.get(event.key);
-      if (action === 'toggle-mode') {
+      if (action === 'word-mode') {
         setLetterIndex(0);
-        setMode(mode === 'letter' ? 'word' : 'letter');
+        if (mode === 'word') {
+          setArrowAnimationKey(arrowAnimationKey + 1);
+        } else {
+          setMode('word');
+        }
       } else if (action === 'next-letter') {
+        if (mode === 'word') {
+          setMode('letter');
+        }
         const newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
         setLetterIndex(newPosition);
+        playSound(LETTER_FORWARD_SOUND);
       } else if (action === 'previous-letter') {
+        if (mode === 'word') {
+          setMode('letter');
+        }
         const newPosition = letterIndex === 0 ? word.length - 1 : letterIndex - 1;
         setLetterIndex(newPosition);
       } else if (action === 'next-uncompleted-word') {
@@ -395,6 +427,7 @@ function App() {
         if (completedWords.includes(word)) {
           setCompletedWords(completedWords.filter((completedWord) => completedWord !== word));
         } else {
+          playSound(WORD_COMPLETE_SOUND);
           setShowUnicorn(true);
         }
       } else if (action === 'reset') {
@@ -411,7 +444,16 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [wordListKey, mode, wordIndex, letterIndex, completedWords, keymapKey, showCompleted]);
+  }, [
+    wordListKey,
+    mode,
+    wordIndex,
+    letterIndex,
+    completedWords,
+    keymapKey,
+    showCompleted,
+    arrowAnimationKey,
+  ]);
 
   const wordList = getWordList(wordListKey, completedWords, showCompleted);
 
@@ -448,10 +490,10 @@ function App() {
         mode={mode}
         word={wordList[wordIndex]}
         letterIndex={letterIndex}
-        score={5}
         showUnicorn={showUnicorn}
         unicornFinished={unicornFinished}
         completedWords={completedWords}
+        arrowAnimationKey={arrowAnimationKey}
       />
       <HelpModal keymapKey={keymapKey} />
       <KeymapToggle keymapKey={keymapKey} setKeymapKey={setKeymapKey} />
