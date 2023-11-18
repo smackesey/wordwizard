@@ -381,12 +381,17 @@ function App() {
           setMode('word');
         }
       } else if (action === 'next-letter') {
+        let newPosition: number;
         if (mode === 'word') {
           setMode('letter');
+          newPosition = 0;
+        } else {
+          newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
         }
-        const newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
         setLetterIndex(newPosition);
-        playSound(LETTER_FORWARD_SOUND);
+        if (newPosition !== 0) {
+          playSound(LETTER_FORWARD_SOUND);
+        }
       } else if (action === 'previous-letter') {
         if (mode === 'word') {
           setMode('letter');
