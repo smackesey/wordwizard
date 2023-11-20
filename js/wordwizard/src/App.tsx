@@ -389,9 +389,7 @@ function App() {
         } else {
           newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
         }
-        if (newPosition !== 0) {
-          playSound(LETTER_FORWARD_SOUND);
-        }
+        playSound(LETTER_FORWARD_SOUND);
         setLetterIndex(newPosition);
       } else if (action === 'previous-letter') {
         let newPosition: number;
