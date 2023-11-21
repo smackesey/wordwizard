@@ -16,7 +16,8 @@ const LETTER_FORWARD_SOUND = new Audio('letter-forward.wav');
 const WORD_COMPLETE_SOUND = new Audio('word-complete.mp3');
 
 const QWERTY_ACTIONS: Map<string, string> = new Map([
-  ['i', 'toggle-completed'],
+  ['u', 'toggle-completed'],
+  ['i', 'letter-mode'],
   ['j', 'previous-letter'],
   [';', 'next-letter'],
   ['l', 'previous-uncompleted-word'],
@@ -28,7 +29,8 @@ const QWERTY_ACTIONS: Map<string, string> = new Map([
 ]);
 
 const DVORAK_ACTIONS: Map<string, string> = new Map([
-  ['c', 'toggle-completed'],
+  ['g', 'toggle-completed'],
+  ['c', 'letter-mode'],
   ['h', 'previous-letter'],
   ['s', 'next-letter'],
   ['n', 'previous-uncompleted-word'],
@@ -133,6 +135,7 @@ function Word({
 
 function Sidebar({
   wordIndex,
+  setWordIndex,
   wordListKey,
   setWordListKey,
   completedWords,
@@ -142,6 +145,7 @@ function Sidebar({
   setUseUppercase,
 }: {
   wordIndex: number;
+  setWordIndex: (index: number) => void;
   wordListKey: string;
   completedWords: string[];
   setWordListKey: (wordListKey: string) => void;
@@ -158,7 +162,7 @@ function Sidebar({
         {wordList.map((word, i) => {
           const borderClasses = i === wordIndex ? 'border-2 border-black rounded-md' : '';
           return (
-            <div className={`p-1 ${borderClasses}`} key={i}>
+            <div className={`p-1 ${borderClasses}`} key={i} onClick={() => setWordIndex(i)}>
               <Word
                 word={word}
                 useUppercase={useUppercase}
@@ -232,14 +236,18 @@ function UpwardDropdown({
   );
 }
 
-function Arrow({ animationKey }: { animationKey: number }) {
+// <div className={`${getArrowWidthClass(letterIndex)}`}>
+// <div className="w-64">
+function Arrow({ animationKey, letterIndex }: { animationKey: number; letterIndex: number }) {
   return (
-    <div
-      key={animationKey}
-      className="arrow-container bg-white self-start rounded-md w-8 h-16 flex items-center p-2"
-    >
-      <div className="h-1 flex-grow bg-black -mr-2" />
-      <div className="text-2xl">&#9654;</div>
+    <div className={`${getArrowWidthClass(letterIndex)}`}>
+      <div
+        key={animationKey}
+        className={`arrow-container bg-white self-start rounded-md w-8 h-16 flex items-center p-2`}
+      >
+        <div className="h-1 flex-grow bg-black -mr-2" />
+        <div className="text-2xl">&#9654;</div>
+      </div>
     </div>
   );
 }
@@ -270,6 +278,15 @@ function WordImage({ word, onFinished }: { word: string; onFinished?: () => void
   );
 }
 
+function getArrowWidthClass(letterIndex: number) {
+  const n = (letterIndex + 1) * 4 + letterIndex * 0.5;
+  const x = `w-[${n}rem]`;
+  console.log('letter index', letterIndex);
+  console.log('arrow width class: ', x);
+  // return 'w-[4rem]';
+  return x;
+}
+
 function Board({
   mode,
   word,
@@ -298,7 +315,7 @@ function Board({
       <Word useUppercase={useUppercase} word={cursorWord} />
     );
   } else {
-    secondRow = <Arrow animationKey={arrowAnimationKey} />;
+    secondRow = <Arrow letterIndex={letterIndex} animationKey={arrowAnimationKey} />;
   }
 
   return (
@@ -307,8 +324,10 @@ function Board({
         <div className="h-[40%] w-[600px] flex flex-col items-center justify-center">
           {showUnicorn && <WordImage word={word} />}
         </div>
-        <Word word={word} useUppercase={useUppercase} />
-        {secondRow}
+        <div className="flex flex-col space-y-2 > *">
+          <Word word={word} useUppercase={useUppercase} />
+          {secondRow}
+        </div>
       </div>
       {/* {showUnicorn && <Unicorn onFinished={unicornFinished} />} */}
       <Scoreboard completedWords={completedWords} />
@@ -416,29 +435,27 @@ function App() {
       console.log('keymap key', keymapKey);
       const action = keymap.get(event.key);
       if (action === 'word-mode') {
-        setLetterIndex(0);
+        // setLetterIndex(0);
         if (mode === 'word') {
           setArrowAnimationKey(arrowAnimationKey + 1);
         } else {
           setMode('word');
         }
-      } else if (action === 'next-letter') {
-        let newPosition: number;
+      } else if (action === 'letter-mode') {
         if (mode === 'word') {
           setMode('letter');
-          newPosition = 0;
-        } else {
-          newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
+        }
+      } else if (action === 'next-letter') {
+        const newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
+        if (mode === 'word') {
+          setArrowAnimationKey(arrowAnimationKey + 1);
         }
         playSound(LETTER_FORWARD_SOUND);
         setLetterIndex(newPosition);
       } else if (action === 'previous-letter') {
-        let newPosition: number;
+        const newPosition = letterIndex === 0 ? word.length - 1 : letterIndex - 1;
         if (mode === 'word') {
-          setMode('letter');
-          newPosition = 0;
-        } else {
-          newPosition = letterIndex === 0 ? word.length - 1 : letterIndex - 1;
+          setArrowAnimationKey(arrowAnimationKey + 1);
         }
         setLetterIndex(newPosition);
       } else if (action === 'next-uncompleted-word') {
@@ -546,6 +563,7 @@ function App() {
     <div className="flex w-screen h-screen bg-black overflow-hidden">
       <Sidebar
         wordIndex={wordIndex}
+        setWordIndex={setWordIndex}
         wordListKey={wordListKey}
         setWordListKey={setWordListKey}
         showCompleted={showCompleted}
