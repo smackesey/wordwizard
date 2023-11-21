@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion';
 import React from 'react';
 import './App.css';
+import { Action, Keymap, KEYMAPS } from './keymaps';
 import { WORD_LISTS } from './words';
 
 const CURSOR_CHAR = '\u261D';
@@ -10,41 +12,9 @@ const UNICORN_DURATION = 1000;
 
 type Mode = 'letter' | 'word';
 type Direction = 'forward' | 'backward';
-type Keymap = 'QWERTY' | 'DVORAK';
 
 const LETTER_FORWARD_SOUND = new Audio('letter-forward.wav');
 const WORD_COMPLETE_SOUND = new Audio('word-complete.mp3');
-
-const QWERTY_ACTIONS: Map<string, string> = new Map([
-  ['u', 'toggle-completed'],
-  ['i', 'letter-mode'],
-  ['j', 'previous-letter'],
-  [';', 'next-letter'],
-  ['l', 'previous-uncompleted-word'],
-  ['k', 'next-uncompleted-word'],
-  [',', 'previous-word'],
-  ['m', 'next-word'],
-  ['o', 'word-mode'],
-  ['p', 'reset'],
-]);
-
-const DVORAK_ACTIONS: Map<string, string> = new Map([
-  ['g', 'toggle-completed'],
-  ['c', 'letter-mode'],
-  ['h', 'previous-letter'],
-  ['s', 'next-letter'],
-  ['n', 'previous-uncompleted-word'],
-  ['t', 'next-uncompleted-word'],
-  ['v', 'previous-word'],
-  ['w', 'next-word'],
-  ['r', 'word-mode'],
-  ['l', 'reset'],
-]);
-
-const KEYMAPS: Map<Keymap, Map<string, string>> = new Map([
-  ['QWERTY', QWERTY_ACTIONS],
-  ['DVORAK', DVORAK_ACTIONS],
-]);
 
 function playSound(sound: HTMLAudioElement) {
   // sound.currentTime = 0;
@@ -77,15 +47,14 @@ function Scoreboard({ completedWords }: { completedWords: string[] }) {
       "
     >
       <div className="text-3xl font-bold">Score: {completedWords.length}</div>
-      <div className="flex flex-wrap space-x-1 > *">
+      <div className="flex flex-wrap space-x-2 > *">
         {completedWords.map((word, i) => (
-          <img
+          <motion.img
             src={`word-images/${word}.png`}
             alt="{word}"
             key={i}
-            className={`my-1 mx-1 w-32 h-32 rounded-lg transition-opacity ${
-              i === completedWords.length - 1 ? 'fade-in' : ''
-            }`}
+            className={`my-1 mx-1 w-32 h-32 rounded-lg transition-opacity`}
+            layoutId={`word-image-${word}`}
           />
         ))}
       </div>
@@ -178,22 +147,25 @@ function Sidebar({
         setItem={setWordListKey}
         title="Word lists"
       />
-      <div className="flex justify-between">
-        <div>Show completed</div>
-        <input
-          type="checkbox"
-          checked={showCompleted}
-          onChange={(event) => setShowCompleted(event.target.checked)}
-        />
-      </div>
-      <div className="flex justify-between">
-        <div>Use uppercase</div>
-        <input
-          type="checkbox"
-          checked={useUppercase}
-          onChange={(event) => setUseUppercase(event.target.checked)}
-        />
-      </div>
+      <SettingsToggle label="Show completed" value={showCompleted} setValue={setShowCompleted} />
+      <SettingsToggle label="Use uppercase" value={useUppercase} setValue={setUseUppercase} />
+    </div>
+  );
+}
+
+function SettingsToggle({
+  label,
+  value,
+  setValue,
+}: {
+  label: string;
+  value: boolean;
+  setValue: (x: boolean) => void;
+}) {
+  return (
+    <div className="flex justify-between">
+      <div>{label}</div>
+      <input type="checkbox" checked={value} onChange={(event) => setValue(event.target.checked)} />
     </div>
   );
 }
@@ -236,13 +208,17 @@ function UpwardDropdown({
   );
 }
 
-// <div className={`${getArrowWidthClass(letterIndex)}`}>
-// <div className="w-64">
 function Arrow({ animationKey, letterIndex }: { animationKey: number; letterIndex: number }) {
+  const arrowWidthClass = getArrowWidthClass(letterIndex);
+  const style = {
+    animationDuration: (letterIndex + 1) * 0.5 + 's',
+  };
+  console.log('using arrow width class', arrowWidthClass);
   return (
-    <div className={`${getArrowWidthClass(letterIndex)}`}>
+    <div className={`${arrowWidthClass}`}>
       <div
         key={animationKey}
+        style={style}
         className={`arrow-container bg-white self-start rounded-md w-8 h-16 flex items-center p-2`}
       >
         <div className="h-1 flex-grow bg-black -mr-2" />
@@ -274,24 +250,28 @@ function Unicorn({ onFinished }: { onFinished?: () => void }) {
 
 function WordImage({ word, onFinished }: { word: string; onFinished?: () => void }) {
   return (
-    <img src={`word-images/${word}.png`} alt={word} className="rounded-3xl h-[512px] fade-in" />
+    <motion.img
+      layoutId={`word-image-${word}`}
+      src={`word-images/${word}.png`}
+      alt={word}
+      className="rounded-3xl h-[512px] fade-in"
+    />
   );
 }
 
 function getArrowWidthClass(letterIndex: number) {
   const n = (letterIndex + 1) * 4 + letterIndex * 0.5;
   const x = `w-[${n}rem]`;
-  console.log('letter index', letterIndex);
-  console.log('arrow width class: ', x);
-  // return 'w-[8.5rem]';
-  return x;
+
+  // for some reason, w-[4rem] is not getting interpreted correctly
+  return letterIndex === 0 ? 'w-16' : x;
 }
 
 function Board({
   mode,
   word,
   letterIndex,
-  showUnicorn,
+  showWordImage,
   completedWords,
   arrowAnimationKey,
   useUppercase,
@@ -299,7 +279,7 @@ function Board({
   mode: Mode;
   word: string;
   letterIndex: number;
-  showUnicorn: boolean;
+  showWordImage: boolean;
   completedWords: string[];
   arrowAnimationKey: number;
   useUppercase: boolean;
@@ -309,7 +289,7 @@ function Board({
 
   let secondRow;
   if (mode === 'letter') {
-    secondRow = showUnicorn ? (
+    secondRow = showWordImage ? (
       <div className="h-16" />
     ) : (
       <Word useUppercase={useUppercase} word={cursorWord} />
@@ -322,14 +302,13 @@ function Board({
     <div className="relative bg-gray-500 flex-1 flex justify-center">
       <div className="flex flex-col space-y-2 > * items-center">
         <div className="h-[40%] w-[600px] flex flex-col items-center justify-center">
-          {showUnicorn && <WordImage word={word} />}
+          {showWordImage && <WordImage word={word} />}
         </div>
         <div className="flex flex-col space-y-2 > *">
           <Word word={word} useUppercase={useUppercase} />
           {secondRow}
         </div>
       </div>
-      {/* {showUnicorn && <Unicorn onFinished={unicornFinished} />} */}
       <Scoreboard completedWords={completedWords} />
     </div>
   );
@@ -423,7 +402,7 @@ function App() {
   const [letterIndex, setLetterIndex] = React.useState(0);
   const [completedWords, setCompletedWords] = React.useState<string[]>([]);
   const [showCompleted, setShowCompleted] = React.useState(false);
-  const [showUnicorn, setShowUnicorn] = React.useState(false);
+  const [showWordImage, setShowUnicorn] = React.useState(false);
   const [arrowAnimationKey, setArrowAnimationKey] = React.useState(0);
   const [useUppercase, setUseUppercase] = React.useState(false);
 
@@ -432,8 +411,8 @@ function App() {
       const wordList = getWordList(wordListKey, completedWords, showCompleted);
       const word = wordList[wordIndex];
       const keymap = KEYMAPS.get(keymapKey)!;
-      console.log('keymap key', keymapKey);
       const action = keymap.get(event.key);
+
       if (action === 'word-mode') {
         // setLetterIndex(0);
         if (mode === 'word') {
@@ -489,7 +468,7 @@ function App() {
         setLetterIndex(0);
         setMode('letter');
       } else if (action === 'toggle-completed') {
-        if (showUnicorn) {
+        if (showWordImage) {
           setShowUnicorn(false);
           console.log('unicorn finished');
           setCompletedWords([...completedWords, wordList[wordIndex]]);
@@ -535,29 +514,10 @@ function App() {
     keymapKey,
     showCompleted,
     arrowAnimationKey,
-    showUnicorn,
+    showWordImage,
   ]);
 
   const wordList = getWordList(wordListKey, completedWords, showCompleted);
-
-  // const unicornFinished = () => {
-  //   setShowUnicorn(false);
-  //   console.log('unicorn finished');
-  //   setCompletedWords([...completedWords, wordList[wordIndex]]);
-  //   console.log('completed words', completedWords);
-  //   if (showCompleted) {
-  //     const newWordIndex = cycleUncompletedWordIndex(
-  //       wordList,
-  //       completedWords,
-  //       wordIndex,
-  //       'forward',
-  //     )!;
-  //     console.log('new word index', newWordIndex);
-  //     setWordIndex(newWordIndex);
-  //   }
-  //   setLetterIndex(0);
-  //   setMode('letter');
-  // };
 
   return (
     <div className="flex w-screen h-screen bg-black overflow-hidden">
@@ -576,7 +536,7 @@ function App() {
         mode={mode}
         word={wordList[wordIndex]}
         letterIndex={letterIndex}
-        showUnicorn={showUnicorn}
+        showWordImage={showWordImage}
         completedWords={completedWords}
         arrowAnimationKey={arrowAnimationKey}
         useUppercase={useUppercase}

@@ -57,13 +57,11 @@
 }
 
 .arrow-container {
-  animation: extend 1s linear 1;
+  /* animation: extend 2s linear 1; */
+  animation-name: extend;
+  animation-duration: 1s;
+  animation-timing-function: linear;
   animation-fill-mode: forwards;
-}
-
-.arrow {
-  height: 50px;
-  width: 100%;
 }
 
 @keyframes extend {
