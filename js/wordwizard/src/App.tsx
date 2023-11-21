@@ -59,14 +59,14 @@ function getBgClass(character: string) {
     return '';
   } else if (character === CURSOR_CHAR) {
     return 'bg-yellow-50';
-  } else if (VOWELS.includes(character)) {
+  } else if (VOWELS.includes(character.toLowerCase())) {
     return 'bg-red-500';
   } else {
     return 'bg-blue-500';
   }
 }
 
-function Scoreboard({ score }: { score: number }) {
+function Scoreboard({ completedWords }: { completedWords: string[] }) {
   return (
     <div
       className="
@@ -74,14 +74,16 @@ function Scoreboard({ score }: { score: number }) {
       bottom-8 flex flex-col items-center justify-center w-4/5 space-y-2 > *
       "
     >
-      <div className="text-3xl font-bold">Score: {score}</div>
+      <div className="text-3xl font-bold">Score: {completedWords.length}</div>
       <div className="flex flex-wrap space-x-1 > *">
-        {Array.from([...Array(score).keys()]).map((_, i) => (
+        {completedWords.map((word, i) => (
           <img
-            src="unicorn.webp"
-            alt="Unicorn"
+            src={`word-images/${word}.png`}
+            alt="{word}"
             key={i}
-            className="my-1 mx-1 w-12 h-12 rounded-lg transition-opacity"
+            className={`my-1 mx-1 w-32 h-32 rounded-lg transition-opacity ${
+              i === completedWords.length - 1 ? 'fade-in' : ''
+            }`}
           />
         ))}
       </div>
@@ -110,12 +112,21 @@ function Key({ character }: { character: string }) {
   );
 }
 
-function Word({ word, dimmed }: { word: string; dimmed?: boolean }) {
+function Word({
+  word,
+  useUppercase,
+  dimmed,
+}: {
+  word: string;
+  useUppercase: boolean;
+  dimmed?: boolean;
+}) {
   return (
     <div className="flex font-mono space-x-2 > *">
-      {word.split('').map((letter, i) => (
-        <Tile letter={letter} dimmed={dimmed} key={i} />
-      ))}
+      {word.split('').map((letter, i) => {
+        const text = useUppercase ? letter.toUpperCase() : letter;
+        return <Tile letter={text} dimmed={dimmed} key={i} />;
+      })}
     </div>
   );
 }
@@ -127,6 +138,8 @@ function Sidebar({
   completedWords,
   showCompleted,
   setShowCompleted,
+  useUppercase,
+  setUseUppercase,
 }: {
   wordIndex: number;
   wordListKey: string;
@@ -134,6 +147,8 @@ function Sidebar({
   setWordListKey: (wordListKey: string) => void;
   showCompleted: boolean;
   setShowCompleted: (show: boolean) => void;
+  useUppercase: boolean;
+  setUseUppercase: (use: boolean) => void;
 }) {
   const wordList = getWordList(wordListKey, completedWords, showCompleted);
   return (
@@ -144,7 +159,11 @@ function Sidebar({
           const borderClasses = i === wordIndex ? 'border-2 border-black rounded-md' : '';
           return (
             <div className={`p-1 ${borderClasses}`} key={i}>
-              <Word word={word} dimmed={completedWords.includes(word)} />
+              <Word
+                word={word}
+                useUppercase={useUppercase}
+                dimmed={completedWords.includes(word)}
+              />
             </div>
           );
         })}
@@ -156,11 +175,19 @@ function Sidebar({
         title="Word lists"
       />
       <div className="flex justify-between">
-        <div>Completed</div>
+        <div>Show completed</div>
         <input
           type="checkbox"
           checked={showCompleted}
           onChange={(event) => setShowCompleted(event.target.checked)}
+        />
+      </div>
+      <div className="flex justify-between">
+        <div>Use uppercase</div>
+        <input
+          type="checkbox"
+          checked={useUppercase}
+          onChange={(event) => setUseUppercase(event.target.checked)}
         />
       </div>
     </div>
@@ -237,41 +264,54 @@ function Unicorn({ onFinished }: { onFinished?: () => void }) {
   );
 }
 
+function WordImage({ word, onFinished }: { word: string; onFinished?: () => void }) {
+  return (
+    <img src={`word-images/${word}.png`} alt={word} className="rounded-3xl h-[512px] fade-in" />
+  );
+}
+
 function Board({
   mode,
   word,
   letterIndex,
   showUnicorn,
-  unicornFinished,
   completedWords,
   arrowAnimationKey,
+  useUppercase,
 }: {
   mode: Mode;
   word: string;
   letterIndex: number;
   showUnicorn: boolean;
-  unicornFinished: () => void;
   completedWords: string[];
   arrowAnimationKey: number;
+  useUppercase: boolean;
 }) {
   const cursorWord =
     ' '.repeat(letterIndex) + CURSOR_CHAR + ' '.repeat(word.length - letterIndex - 1);
 
   let secondRow;
   if (mode === 'letter') {
-    secondRow = showUnicorn ? <div className="h-16" /> : <Word word={cursorWord} />;
+    secondRow = showUnicorn ? (
+      <div className="h-16" />
+    ) : (
+      <Word useUppercase={useUppercase} word={cursorWord} />
+    );
   } else {
     secondRow = <Arrow animationKey={arrowAnimationKey} />;
   }
 
   return (
-    <div className="relative bg-gray-500 flex-1 flex items-center justify-center">
-      <div className="flex flex-col space-y-2 > *">
-        <Word word={word} />
+    <div className="relative bg-gray-500 flex-1 flex justify-center">
+      <div className="flex flex-col space-y-2 > * items-center">
+        <div className="h-[40%] w-[600px] flex flex-col items-center justify-center">
+          {showUnicorn && <WordImage word={word} />}
+        </div>
+        <Word word={word} useUppercase={useUppercase} />
         {secondRow}
       </div>
-      {showUnicorn && <Unicorn onFinished={unicornFinished} />}
-      <Scoreboard score={completedWords.length} />
+      {/* {showUnicorn && <Unicorn onFinished={unicornFinished} />} */}
+      <Scoreboard completedWords={completedWords} />
     </div>
   );
 }
@@ -366,6 +406,7 @@ function App() {
   const [showCompleted, setShowCompleted] = React.useState(false);
   const [showUnicorn, setShowUnicorn] = React.useState(false);
   const [arrowAnimationKey, setArrowAnimationKey] = React.useState(0);
+  const [useUppercase, setUseUppercase] = React.useState(false);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -431,7 +472,24 @@ function App() {
         setLetterIndex(0);
         setMode('letter');
       } else if (action === 'toggle-completed') {
-        if (completedWords.includes(word)) {
+        if (showUnicorn) {
+          setShowUnicorn(false);
+          console.log('unicorn finished');
+          setCompletedWords([...completedWords, wordList[wordIndex]]);
+          console.log('completed words', completedWords);
+          if (showCompleted) {
+            const newWordIndex = cycleUncompletedWordIndex(
+              wordList,
+              completedWords,
+              wordIndex,
+              'forward',
+            )!;
+            console.log('new word index', newWordIndex);
+            setWordIndex(newWordIndex);
+          }
+          setLetterIndex(0);
+          setMode('letter');
+        } else if (completedWords.includes(word)) {
           setCompletedWords(completedWords.filter((completedWord) => completedWord !== word));
         } else {
           playSound(WORD_COMPLETE_SOUND);
@@ -460,28 +518,29 @@ function App() {
     keymapKey,
     showCompleted,
     arrowAnimationKey,
+    showUnicorn,
   ]);
 
   const wordList = getWordList(wordListKey, completedWords, showCompleted);
 
-  const unicornFinished = () => {
-    setShowUnicorn(false);
-    console.log('unicorn finished');
-    setCompletedWords([...completedWords, wordList[wordIndex]]);
-    console.log('completed words', completedWords);
-    if (showCompleted) {
-      const newWordIndex = cycleUncompletedWordIndex(
-        wordList,
-        completedWords,
-        wordIndex,
-        'forward',
-      )!;
-      console.log('new word index', newWordIndex);
-      setWordIndex(newWordIndex);
-    }
-    setLetterIndex(0);
-    setMode('letter');
-  };
+  // const unicornFinished = () => {
+  //   setShowUnicorn(false);
+  //   console.log('unicorn finished');
+  //   setCompletedWords([...completedWords, wordList[wordIndex]]);
+  //   console.log('completed words', completedWords);
+  //   if (showCompleted) {
+  //     const newWordIndex = cycleUncompletedWordIndex(
+  //       wordList,
+  //       completedWords,
+  //       wordIndex,
+  //       'forward',
+  //     )!;
+  //     console.log('new word index', newWordIndex);
+  //     setWordIndex(newWordIndex);
+  //   }
+  //   setLetterIndex(0);
+  //   setMode('letter');
+  // };
 
   return (
     <div className="flex w-screen h-screen bg-black overflow-hidden">
@@ -492,15 +551,17 @@ function App() {
         showCompleted={showCompleted}
         setShowCompleted={setShowCompleted}
         completedWords={completedWords}
+        useUppercase={useUppercase}
+        setUseUppercase={setUseUppercase}
       />
       <Board
         mode={mode}
         word={wordList[wordIndex]}
         letterIndex={letterIndex}
         showUnicorn={showUnicorn}
-        unicornFinished={unicornFinished}
         completedWords={completedWords}
         arrowAnimationKey={arrowAnimationKey}
+        useUppercase={useUppercase}
       />
       <HelpModal keymapKey={keymapKey} />
       <KeymapToggle keymapKey={keymapKey} setKeymapKey={setKeymapKey} />
