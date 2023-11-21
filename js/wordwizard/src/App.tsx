@@ -283,7 +283,7 @@ function getArrowWidthClass(letterIndex: number) {
   const x = `w-[${n}rem]`;
   console.log('letter index', letterIndex);
   console.log('arrow width class: ', x);
-  // return 'w-[4rem]';
+  // return 'w-[8.5rem]';
   return x;
 }
 
@@ -447,17 +447,17 @@ function App() {
         }
       } else if (action === 'next-letter') {
         const newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
+        setLetterIndex(newPosition);
         if (mode === 'word') {
           setArrowAnimationKey(arrowAnimationKey + 1);
         }
         playSound(LETTER_FORWARD_SOUND);
-        setLetterIndex(newPosition);
       } else if (action === 'previous-letter') {
         const newPosition = letterIndex === 0 ? word.length - 1 : letterIndex - 1;
+        setLetterIndex(newPosition);
         if (mode === 'word') {
           setArrowAnimationKey(arrowAnimationKey + 1);
         }
-        setLetterIndex(newPosition);
       } else if (action === 'next-uncompleted-word') {
         const newWordIndex = cycleUncompletedWordIndex(
           wordList,
