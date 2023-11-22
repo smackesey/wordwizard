@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import React from 'react';
 import './App.css';
-import { Action, Keymap, KEYMAPS } from './keymaps';
+import { Keymap, KEYMAPS } from './keymaps';
 import { WORD_LISTS } from './words';
 
 const CURSOR_CHAR = '\u261D';
@@ -228,25 +228,25 @@ function Arrow({ animationKey, letterIndex }: { animationKey: number; letterInde
   );
 }
 
-function Unicorn({ onFinished }: { onFinished?: () => void }) {
-  React.useEffect(() => {
-    const animationDuration = UNICORN_DURATION; // Duration in milliseconds (5 seconds in this case)
-
-    const timer = setTimeout(() => {
-      if (onFinished) {
-        onFinished();
-      }
-    }, animationDuration);
-
-    return () => clearTimeout(timer);
-  }, [onFinished]);
-
-  return (
-    <div className="arc-container">
-      <img src="unicorn.webp" alt="Unicorn" className="rounded-3xl arc-image" />
-    </div>
-  );
-}
+// function Unicorn({ onFinished }: { onFinished?: () => void }) {
+//   React.useEffect(() => {
+//     const animationDuration = UNICORN_DURATION; // Duration in milliseconds (5 seconds in this case)
+//
+//     const timer = setTimeout(() => {
+//       if (onFinished) {
+//         onFinished();
+//       }
+//     }, animationDuration);
+//
+//     return () => clearTimeout(timer);
+//   }, [onFinished]);
+//
+//   return (
+//     <div className="arc-container">
+//       <img src="unicorn.webp" alt="Unicorn" className="rounded-3xl arc-image" />
+//     </div>
+//   );
+// }
 
 function WordImage({ word, onFinished }: { word: string; onFinished?: () => void }) {
   return (
