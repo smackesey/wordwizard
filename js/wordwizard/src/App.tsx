@@ -8,7 +8,7 @@ const CURSOR_CHAR = '\u261D';
 
 const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
-const UNICORN_DURATION = 1000;
+// const UNICORN_DURATION = 1000;
 
 type Mode = 'letter' | 'word';
 type Direction = 'forward' | 'backward';
