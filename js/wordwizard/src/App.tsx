@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import React from 'react';
+import { atom, RecoilRoot, selector, useRecoilState, useRecoilValue } from 'recoil';
 import './App.css';
 import { Keymap, KEYMAPS } from './keymaps';
 import { WORD_LISTS } from './words';
@@ -7,8 +8,6 @@ import { WORD_LISTS } from './words';
 const CURSOR_CHAR = '\u261D';
 
 const VOWELS = ['a', 'e', 'i', 'o', 'u'];
-
-// const UNICORN_DURATION = 1000;
 
 type Mode = 'letter' | 'word';
 type Direction = 'forward' | 'backward';
@@ -25,6 +24,53 @@ function playSound(sound: HTMLAudioElement) {
   }
   sound.play();
 }
+
+// ########################
+// ##### STATE
+// ########################
+
+const keymapKeyState = atom<Keymap>({ key: 'keymapKey', default: 'DVORAK' });
+const wordListKeyState = atom<string>({
+  key: 'wordListKey',
+  default: WORD_LISTS.keys().next().value,
+});
+const modeState = atom<Mode>({ key: 'mode', default: 'letter' });
+const wordIndexState = atom<number>({ key: 'wordIndex', default: 0 });
+const letterIndexState = atom<number>({ key: 'letterIndex', default: 0 });
+const completedWordsState = atom<string[]>({ key: 'completedWords', default: [] });
+const showCompletedState = atom<boolean>({ key: 'showCompleted', default: false });
+const showWordImageState = atom<boolean>({ key: 'showWordImage', default: false });
+const arrowAnimationKeyState = atom<number>({ key: 'arrowAnimationKey', default: 0 });
+const useUppercaseState = atom<boolean>({ key: 'useUppercase', default: false });
+
+const wordListState = selector<string[]>({
+  key: 'wordList',
+  get: ({ get }) => {
+    const wordListKey = get(wordListKeyState);
+    const completedWords = get(completedWordsState);
+    const showCompleted = get(showCompletedState);
+    return getWordList(wordListKey, completedWords, showCompleted);
+  },
+});
+const wordState = selector<string>({
+  key: 'word',
+  get: ({ get }) => {
+    const wordList = get(wordListState);
+    const wordIndex = get(wordIndexState);
+    return wordList[wordIndex];
+  },
+});
+const keymapState = selector<Map<string, string>>({
+  key: 'keymap',
+  get: ({ get }) => {
+    const keymapKey = get(keymapKeyState);
+    return KEYMAPS.get(keymapKey)!;
+  },
+});
+
+// ########################
+// ##### COMPONENTS
+// ########################
 
 function getBgClass(character: string) {
   if (character === ' ') {
@@ -102,27 +148,13 @@ function Word({
   );
 }
 
-function Sidebar({
-  wordIndex,
-  setWordIndex,
-  wordListKey,
-  setWordListKey,
-  completedWords,
-  showCompleted,
-  setShowCompleted,
-  useUppercase,
-  setUseUppercase,
-}: {
-  wordIndex: number;
-  setWordIndex: (index: number) => void;
-  wordListKey: string;
-  completedWords: string[];
-  setWordListKey: (wordListKey: string) => void;
-  showCompleted: boolean;
-  setShowCompleted: (show: boolean) => void;
-  useUppercase: boolean;
-  setUseUppercase: (use: boolean) => void;
-}) {
+function Sidebar() {
+  const [wordIndex, setWordIndex] = useRecoilState(wordIndexState);
+  const [wordListKey, setWordListKey] = useRecoilState(wordListKeyState);
+  const completedWords = useRecoilValue(completedWordsState);
+  const [showCompleted, setShowCompleted] = useRecoilState(showCompletedState);
+  const [useUppercase, setUseUppercase] = useRecoilState(useUppercaseState);
+
   const wordList = getWordList(wordListKey, completedWords, showCompleted);
   return (
     <div className="bg-gray-300 p-2 w-1/4 flex flex-col">
@@ -228,26 +260,6 @@ function Arrow({ animationKey, letterIndex }: { animationKey: number; letterInde
   );
 }
 
-// function Unicorn({ onFinished }: { onFinished?: () => void }) {
-//   React.useEffect(() => {
-//     const animationDuration = UNICORN_DURATION; // Duration in milliseconds (5 seconds in this case)
-//
-//     const timer = setTimeout(() => {
-//       if (onFinished) {
-//         onFinished();
-//       }
-//     }, animationDuration);
-//
-//     return () => clearTimeout(timer);
-//   }, [onFinished]);
-//
-//   return (
-//     <div className="arc-container">
-//       <img src="unicorn.webp" alt="Unicorn" className="rounded-3xl arc-image" />
-//     </div>
-//   );
-// }
-
 function WordImage({ word, onFinished }: { word: string; onFinished?: () => void }) {
   return (
     <motion.img
@@ -267,23 +279,15 @@ function getArrowWidthClass(letterIndex: number) {
   return letterIndex === 0 ? 'w-16' : x;
 }
 
-function Board({
-  mode,
-  word,
-  letterIndex,
-  showWordImage,
-  completedWords,
-  arrowAnimationKey,
-  useUppercase,
-}: {
-  mode: Mode;
-  word: string;
-  letterIndex: number;
-  showWordImage: boolean;
-  completedWords: string[];
-  arrowAnimationKey: number;
-  useUppercase: boolean;
-}) {
+function Board() {
+  const mode = useRecoilValue(modeState);
+  const word = useRecoilValue(wordState);
+  const letterIndex = useRecoilValue(letterIndexState);
+  const showWordImage = useRecoilValue(showWordImageState);
+  const completedWords = useRecoilValue(completedWordsState);
+  const arrowAnimationKey = useRecoilValue(arrowAnimationKeyState);
+  const useUppercase = useRecoilValue(useUppercaseState);
+
   const cursorWord =
     ' '.repeat(letterIndex) + CURSOR_CHAR + ' '.repeat(word.length - letterIndex - 1);
 
@@ -339,10 +343,10 @@ function cycleWordIndex(wordList: string[], wordIndex: number, direction: Direct
   }
 }
 
-function HelpModal({ keymapKey }: { keymapKey: Keymap }) {
+function HelpModal() {
+  const keymap = useRecoilValue(keymapState);
   const [isOpen, setIsOpen] = React.useState(false);
 
-  const keymap = KEYMAPS.get(keymapKey)!;
   const toggleModal = () => setIsOpen(!isOpen);
 
   return (
@@ -370,13 +374,8 @@ function HelpModal({ keymapKey }: { keymapKey: Keymap }) {
   );
 }
 
-function KeymapToggle({
-  keymapKey,
-  setKeymapKey,
-}: {
-  keymapKey: Keymap;
-  setKeymapKey: (keymapKey: Keymap) => void;
-}) {
+function KeymapToggle() {
+  const [keymapKey, setKeymapKey] = useRecoilState(keymapKeyState);
   return (
     <div
       className="fixed top-0 right-0 m-3 p-3 cursor-pointer bg-gray-400 rounded-md border-black border-2"
@@ -394,17 +393,16 @@ function getWordList(wordListKey: string, completedWords: string[], showComplete
     : fullWordList.filter((word) => !completedWords.includes(word));
 }
 
-function App() {
-  const [keymapKey, setKeymapKey] = React.useState<Keymap>('DVORAK');
-  const [wordListKey, setWordListKey] = React.useState(WORD_LISTS.keys().next().value);
-  const [mode, setMode] = React.useState<Mode>('letter');
-  const [wordIndex, setWordIndex] = React.useState(0);
-  const [letterIndex, setLetterIndex] = React.useState(0);
-  const [completedWords, setCompletedWords] = React.useState<string[]>([]);
-  const [showCompleted, setShowCompleted] = React.useState(false);
-  const [showWordImage, setShowUnicorn] = React.useState(false);
-  const [arrowAnimationKey, setArrowAnimationKey] = React.useState(0);
-  const [useUppercase, setUseUppercase] = React.useState(false);
+function KeyboardListener() {
+  const keymapKey = useRecoilValue(keymapKeyState);
+  const wordListKey = useRecoilValue(wordListKeyState);
+  const [mode, setMode] = useRecoilState(modeState);
+  const [wordIndex, setWordIndex] = useRecoilState(wordIndexState);
+  const [letterIndex, setLetterIndex] = useRecoilState(letterIndexState);
+  const [completedWords, setCompletedWords] = useRecoilState(completedWordsState);
+  const showCompleted = useRecoilValue(showCompletedState);
+  const [showWordImage, setShowWordImage] = useRecoilState(showWordImageState);
+  const [arrowAnimationKey, setArrowAnimationKey] = useRecoilState(arrowAnimationKeyState);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -414,7 +412,6 @@ function App() {
       const action = keymap.get(event.key);
 
       if (action === 'word-mode') {
-        // setLetterIndex(0);
         if (mode === 'word') {
           setArrowAnimationKey(arrowAnimationKey + 1);
         } else {
@@ -469,7 +466,7 @@ function App() {
         setMode('letter');
       } else if (action === 'toggle-completed') {
         if (showWordImage) {
-          setShowUnicorn(false);
+          setShowWordImage(false);
           console.log('unicorn finished');
           setCompletedWords([...completedWords, wordList[wordIndex]]);
           console.log('completed words', completedWords);
@@ -489,7 +486,7 @@ function App() {
           setCompletedWords(completedWords.filter((completedWord) => completedWord !== word));
         } else {
           playSound(WORD_COMPLETE_SOUND);
-          setShowUnicorn(true);
+          setShowWordImage(true);
         }
       } else if (action === 'reset') {
         setCompletedWords([]);
@@ -497,7 +494,6 @@ function App() {
         setLetterIndex(0);
       }
     };
-
     // Attach the event listener
     document.addEventListener('keydown', handleKeyDown);
 
@@ -515,35 +511,28 @@ function App() {
     showCompleted,
     arrowAnimationKey,
     showWordImage,
+    setArrowAnimationKey,
+    setCompletedWords,
+    setWordIndex,
+    setShowWordImage,
+    setLetterIndex,
+    setMode,
   ]);
 
-  const wordList = getWordList(wordListKey, completedWords, showCompleted);
+  return null;
+}
 
+function App() {
   return (
-    <div className="flex w-screen h-screen bg-black overflow-hidden">
-      <Sidebar
-        wordIndex={wordIndex}
-        setWordIndex={setWordIndex}
-        wordListKey={wordListKey}
-        setWordListKey={setWordListKey}
-        showCompleted={showCompleted}
-        setShowCompleted={setShowCompleted}
-        completedWords={completedWords}
-        useUppercase={useUppercase}
-        setUseUppercase={setUseUppercase}
-      />
-      <Board
-        mode={mode}
-        word={wordList[wordIndex]}
-        letterIndex={letterIndex}
-        showWordImage={showWordImage}
-        completedWords={completedWords}
-        arrowAnimationKey={arrowAnimationKey}
-        useUppercase={useUppercase}
-      />
-      <HelpModal keymapKey={keymapKey} />
-      <KeymapToggle keymapKey={keymapKey} setKeymapKey={setKeymapKey} />
-    </div>
+    <RecoilRoot>
+      <KeyboardListener />
+      <div className="flex w-screen h-screen bg-black overflow-hidden">
+        <Sidebar />
+        <Board />
+        <HelpModal />
+        <KeymapToggle />
+      </div>
+    </RecoilRoot>
   );
 }
 
