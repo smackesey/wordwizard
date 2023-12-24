@@ -53,7 +53,7 @@ function Scoreboard({ completedWords }: { completedWords: string[] }) {
             src={`word-images/${word}.png`}
             alt="{word}"
             key={i}
-            className={`my-1 mx-1 xl:w-32 xl:h-32 w-24 h-24 rounded-lg transition-opacity`}
+            className={`my-1 mx-1 tall:h-32 h-24 rounded-lg transition-opacity`}
             layoutId={`word-image-${word}`}
           />
         ))}
@@ -254,7 +254,7 @@ function WordImage({ word, onFinished }: { word: string; onFinished?: () => void
       layoutId={`word-image-${word}`}
       src={`word-images/${word}.png`}
       alt={word}
-      className="rounded-3xl xl:h-[512px] h-[384px] fade-in"
+      className="rounded-3xl tall:h-[512px] h-[384px] fade-in"
     />
   );
 }
