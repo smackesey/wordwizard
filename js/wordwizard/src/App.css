@@ -5,59 +5,7 @@
   font-style: normal;
 }
 
-.cursor {
-  font-family: 'Noto Color Emoji';
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.arc-container {
-  width: 600px; /* Diameter of the arc */
-  height: 600px; /* Diameter of the arc */
-  position: absolute;
-  animation: moveInArc 1s linear 1; /* Adjust duration as needed */
-  animation-fill-mode: forwards;
-}
-
-.arc-image {
-  position: absolute;
-  bottom: 0; /* Position at the bottom of the arc */
-  width: 150px; /* Adjust image size as needed */
-  height: auto;
-  opacity: 0;
-  animation: keepOrientation 1s linear 1; /* Counter-rotate the image */
-  animation-fill-mode: forwards;
-}
-
-@keyframes moveInArc {
-  0% {
-    transform: rotate(30deg) translateY(-300px); /* Start at 45 degrees */
-  }
-  100% {
-    transform: rotate(135deg) translateY(-300px); /* End at 135 degrees */
-  }
-}
-
-@keyframes keepOrientation {
-  0% {
-    opacity: 0;
-    transform: rotate(-30deg); /* Counteract starting rotation */
-  }
-  100% {
-    opacity: 1;
-    transform: rotate(-135deg); /* Counteract ending rotation */
-  }
-}
-
-.arrow-container {
-  /* animation: extend 2s linear 1; */
+.animate-extend {
   animation-name: extend;
   animation-duration: 1s;
   animation-timing-function: linear;
@@ -70,8 +18,13 @@
   }
 }
 
-.fade-in {
+.animate-fade-in {
   animation: fadeIn 2s linear 1;
+  animation-fill-mode: forwards;
+}
+
+.animate-fade-in-fast {
+  animation: fadeIn 0.5s linear 1;
   animation-fill-mode: forwards;
 }
 
