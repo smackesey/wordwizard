@@ -83,3 +83,9 @@
     opacity: 1;
   }
 }
+
+.square {
+  aspect-ratio: 1/1;
+  display: grid;
+  place-items: center;
+}

@@ -1,18 +1,20 @@
 export type Keymap = 'QWERTY' | 'DVORAK';
 
 export type Action =
-  | 'toggle-completed'
+  | 'add-demerit'
   | 'letter-mode'
-  | 'previous-letter'
   | 'next-letter'
-  | 'previous-uncompleted-word'
   | 'next-uncompleted-word'
-  | 'previous-word'
   | 'next-word'
-  | 'word-mode'
-  | 'reset';
+  | 'previous-letter'
+  | 'previous-uncompleted-word'
+  | 'previous-word'
+  | 'reset'
+  | 'toggle-completed'
+  | 'word-mode';
 
 const QWERTY_KEYMAP: Map<string, Action> = new Map([
+  ['h', 'add-demerit'],
   ['u', 'toggle-completed'],
   ['i', 'letter-mode'],
   ['j', 'previous-letter'],
@@ -26,6 +28,7 @@ const QWERTY_KEYMAP: Map<string, Action> = new Map([
 ]);
 
 const DVORAK_KEYMAP: Map<string, Action> = new Map([
+  ['d', 'add-demerit'],
   ['g', 'toggle-completed'],
   ['c', 'letter-mode'],
   ['h', 'previous-letter'],
