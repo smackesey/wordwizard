@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import React from 'react';
 import { atom, RecoilRoot, selector, useRecoilState, useRecoilValue } from 'recoil';
 import './App.css';
-import { Keymap, KEYMAPS } from './keymaps';
+import { KeyboardLayout, KEYBOARD_LAYOUTS, Keymap, KEYMAPS } from './keymaps';
 import { WORD_LISTS } from './words';
 
 const CURSOR_CHAR = '\u261D';
@@ -11,13 +11,13 @@ const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
 type Mode = 'letter' | 'word';
 type Direction = 'forward' | 'backward';
+type GameStatus = 'in-progress' | 'lose' | 'win';
 
 const ADD_DEMERIT_SOUND = new Audio('demerit.oga');
 const LETTER_FORWARD_SOUND = new Audio('letter-forward.wav');
 const WORD_COMPLETE_SOUND = new Audio('word-complete.mp3');
 
 function playSound(sound: HTMLAudioElement) {
-  // sound.currentTime = 0;
   if (sound === LETTER_FORWARD_SOUND) {
     sound.currentTime = 0.1;
   } else {
@@ -32,7 +32,7 @@ function playSound(sound: HTMLAudioElement) {
 
 const demeritCountState = atom<number>({ key: 'demeritCount', default: 0 });
 
-const keymapKeyState = atom<Keymap>({ key: 'keymapKey', default: 'DVORAK' });
+const keymapKeyState = atom<Keymap>({ key: 'keymapKey', default: 'dvorak' });
 const wordListKeyState = atom<string>({
   key: 'wordListKey',
   default: WORD_LISTS.keys().next().value,
@@ -44,10 +44,22 @@ const completedWordsState = atom<string[]>({ key: 'completedWords', default: [] 
 const showCompletedState = atom<boolean>({ key: 'showCompleted', default: false });
 const showWordImageState = atom<boolean>({ key: 'showWordImage', default: false });
 const showDemeritImageState = atom<boolean>({ key: 'showDemeritImage', default: false });
-const gameOverState = atom<boolean>({ key: 'gameOver', default: false });
 const arrowAnimationKeyState = atom<number>({ key: 'arrowAnimationKey', default: 0 });
 const useUppercaseState = atom<boolean>({ key: 'useUppercase', default: false });
-const demeritLimitState = atom<number>({ key: 'demeritLimit', default: 10 });
+const demeritLimitState = atom<number>({ key: 'demeritLimit', default: 5 });
+const numRoundsState = atom<number>({ key: 'numRounds', default: 3 });
+const wordsPerRoundState = atom<number>({ key: 'wordsPerRound', default: 3 });
+const helpModalOpenState = atom<boolean>({ key: 'helpModalOpen', default: false });
+
+const roundIndexState = selector<number>({
+  key: 'roundIndex',
+  get: ({ get }) => {
+    const completedWords = get(completedWordsState);
+    const numRounds = get(numRoundsState);
+    const wordsPerRound = get(wordsPerRoundState);
+    return Math.min(Math.floor(completedWords.length / wordsPerRound), numRounds - 1);
+  },
+});
 
 const wordListState = selector<string[]>({
   key: 'wordList',
@@ -66,6 +78,13 @@ const wordState = selector<string>({
     return wordList[wordIndex];
   },
 });
+const keyboardLayoutState = selector<KeyboardLayout>({
+  key: 'keyboardLayout',
+  get: ({ get }) => {
+    const keymapKey = get(keymapKeyState);
+    return KEYBOARD_LAYOUTS.get(keymapKey)!;
+  },
+});
 const keymapState = selector<Map<string, string>>({
   key: 'keymap',
   get: ({ get }) => {
@@ -73,10 +92,51 @@ const keymapState = selector<Map<string, string>>({
     return KEYMAPS.get(keymapKey)!;
   },
 });
+const gameStatusState = selector<GameStatus>({
+  key: 'gameStatus',
+  get: ({ get }) => {
+    const demeritCount = get(demeritCountState);
+    const demeritLimit = get(demeritLimitState);
+    const completedWords = get(completedWordsState);
+    const numRounds = get(numRoundsState);
+    const wordsPerRound = get(wordsPerRoundState);
+    if (demeritCount >= demeritLimit) {
+      return 'lose';
+    } else if (completedWords.length === numRounds * wordsPerRound) {
+      return 'win';
+    } else {
+      return 'in-progress';
+    }
+  },
+});
 
 // ########################
 // ##### COMPONENTS
 // ########################
+
+function Keyboard() {
+  const keyboardLayout = useRecoilValue(keyboardLayoutState);
+  const keymap = useRecoilValue(keymapState);
+  return (
+    <div className="flex flex-col items-center space-y-2 > *">
+      {keyboardLayout.map((row, index) => (
+        <div className="flex space-x-2 > *">
+          {row.map((key, index) => (
+            <div className="w-24 h-24 bg-gray-200 text-lg border border-black rounded-md flex flex-col items-center p-2">
+              {key.character}
+              <div className="flex-grow" />
+              {keymap.has(key.character.toLowerCase()) ? (
+                <div className="text-xs text-center leading-tight">
+                  {keymap.get(key.character.toLowerCase())?.replaceAll('-', ' ')}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function getBgClass(character: string) {
   if (character === ' ') {
@@ -92,10 +152,11 @@ function getBgClass(character: string) {
 
 function Scoreboard() {
   const completedWords = useRecoilValue(completedWordsState);
+  const roundIndex = useRecoilValue(roundIndexState);
   const demeritCount = useRecoilValue(demeritCountState);
   const demeritLimit = useRecoilValue(demeritLimitState);
-  console.log('rendering scoreboard, completed words length');
-  console.log(completedWords.length);
+  const wordsPerRound = useRecoilValue(wordsPerRoundState);
+
   return (
     <motion.div
       layout
@@ -105,20 +166,41 @@ function Scoreboard() {
       "
     >
       <div className="text-3xl font-bold">Score: {completedWords.length}</div>
-      <div className="flex flex-wrap space-x-2 > *">
-        {completedWords.map((word, i) => (
-          <motion.img
-            src={`word-images/${word}.png`}
-            alt="{word}"
-            key={i}
-            className="my-1 mx-1 tall:h-32 h-24 rounded-lg transition-opacity border-2 border-black"
-            layoutId={`word-image-${word}`}
-          />
+      <div className="w-full flex flex-col space-y-2 > *">
+        {[...Array(roundIndex + 1)].map((_, i) => (
+          <div className="flex w-full justify-center space-x-2 > *" key={i}>
+            {[...Array(wordsPerRound)].map((_, j) => {
+              const index = i * wordsPerRound + j;
+              const word = completedWords[index];
+              const img =
+                word === undefined ? null : (
+                  <motion.img
+                    src={`word-images/${word}.png`}
+                    alt={word}
+                    className="object-cover rounded-lg transition-opacity"
+                    layoutId={`word-image-${word}`}
+                  />
+                );
+              return <ImageTile key={index}>{img}</ImageTile>;
+            })}
+            ,
+          </div>
         ))}
       </div>
-      <hr className="h-[2px] border-none bg-black rounded-md w-full" />
+      <hr className="h-[2px] flex-shrink-0 border-none bg-black rounded-md w-full" />
       <DemeritMeter demeritLimit={demeritLimit} demeritCount={demeritCount} />
     </motion.div>
+  );
+}
+
+function ImageTile({ children }: { children: React.ReactNode }) {
+  const numRounds = useRecoilValue(numRoundsState);
+  const tileSize = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
+  const style = { width: `${tileSize}vh` };
+  return (
+    <div style={style} className={`square rounded-lg border-2 border-black`}>
+      {children}
+    </div>
   );
 }
 
@@ -132,11 +214,7 @@ function DemeritMeter({
   return (
     <div className="max-w-full flex space-x-2 > *">
       {Array.from(Array(demeritLimit)).map((_, i) => (
-        <div
-          // className="my-1 mx-1 tall:h-24 h-16 tall:w-24 w-16 rounded-lg border-2 border-black"
-          className="my-1 w-24 square rounded-lg border-2 border-black"
-          key={i}
-        >
+        <ImageTile key={i}>
           {i < demeritCount ? (
             <motion.img
               src="demerit.png"
@@ -145,7 +223,7 @@ function DemeritMeter({
               className="object-cover rounded-lg"
             />
           ) : null}
-        </div>
+        </ImageTile>
       ))}
     </div>
   );
@@ -198,11 +276,14 @@ function Sidebar() {
   const [showCompleted, setShowCompleted] = useRecoilState(showCompletedState);
   const [useUppercase, setUseUppercase] = useRecoilState(useUppercaseState);
   const [demeritLimit, setDemeritLimit] = useRecoilState(demeritLimitState);
+  const [numRounds, setNumRounds] = useRecoilState(numRoundsState);
+  const [wordsPerRound, setWordsPerRound] = useRecoilState(wordsPerRoundState);
+  const [keymapKey, setKeymapKey] = useRecoilState(keymapKeyState);
 
   const wordList = getWordList(wordListKey, completedWords, showCompleted);
   return (
     <div className="bg-gray-300 p-2 w-1/4 flex flex-col">
-      <div className="text-5xl font-bold mb-2">Remaining words</div>
+      <div className="text-5xl font-bold mb-2">Words</div>
       <div className="space-y-2 > * overflow-y-scroll">
         {wordList.map((word, i) => {
           const borderClasses = i === wordIndex ? 'border-2 border-black rounded-md' : '';
@@ -218,14 +299,54 @@ function Sidebar() {
         })}
       </div>
       <div className="h-0 flex-grow"></div>
-      <UpwardDropdown
-        items={Array.from(WORD_LISTS.keys())}
-        setItem={setWordListKey}
-        title="Word lists"
-      />
-      <SettingsToggle label="Show completed" value={showCompleted} setValue={setShowCompleted} />
-      <SettingsToggle label="Use uppercase" value={useUppercase} setValue={setUseUppercase} />
-      <SettingsSlider label="Demerit limit" value={demeritLimit} setValue={setDemeritLimit} />
+      <div className="flex flex-col mt-2">
+        <SettingsSelect
+          label="Word list"
+          value={wordListKey}
+          setValue={setWordListKey}
+          options={Array.from(WORD_LISTS.keys())}
+        />
+        <SettingsToggle label="Show completed" value={showCompleted} setValue={setShowCompleted} />
+        <SettingsToggle label="Use uppercase" value={useUppercase} setValue={setUseUppercase} />
+        <SettingsSlider label="Demerit limit" value={demeritLimit} setValue={setDemeritLimit} />
+        <SettingsSlider label="# Rounds" value={numRounds} setValue={setNumRounds} />
+        <SettingsSlider label="Words / round" value={wordsPerRound} setValue={setWordsPerRound} />
+        <SettingsSelect
+          label="Keymap"
+          value={keymapKey}
+          setValue={setKeymapKey}
+          options={Array.from(KEYMAPS.keys())}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SettingsSelect<T extends string>({
+  label,
+  value,
+  setValue,
+  options,
+}: {
+  label: string;
+  value: T;
+  setValue: (x: T) => void;
+  options: T[];
+}) {
+  return (
+    <div className="flex justify-between">
+      <div>{label}</div>
+      <select
+        className="rounded-sm border-black border"
+        value={value}
+        onChange={(event) => setValue(event.target.value as T)}
+      >
+        {options.map((option, i) => (
+          <option value={option} key={i}>
+            {option}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -277,50 +398,11 @@ function SettingsSlider({
   );
 }
 
-function UpwardDropdown({
-  items,
-  setItem,
-  title,
-}: {
-  items: string[];
-  setItem: (wordListName: string) => void;
-  title: string;
-}) {
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  const toggleDropdown = () => setIsOpen(!isOpen);
-
-  return (
-    <div className="dropdown-container p-2 flex flex-col space-y-2 > *">
-      {isOpen && (
-        <div className="dropdown-content">
-          {items.map((item, i) => (
-            <div
-              className="bg-gray-300 hover:border-black hover:border hover:cursor-pointer p-2"
-              onClick={() => {
-                setItem(item);
-                toggleDropdown();
-              }}
-              key={i}
-            >
-              {item}
-            </div>
-          ))}
-        </div>
-      )}
-      <button className="border-black border-2 rounded-md p-2" onClick={toggleDropdown}>
-        {title}
-      </button>
-    </div>
-  );
-}
-
 function Arrow({ animationKey, letterIndex }: { animationKey: number; letterIndex: number }) {
   const arrowWidthClass = getArrowWidthClass(letterIndex);
   const style = {
     animationDuration: (letterIndex + 1) * 0.5 + 's',
   };
-  console.log('using arrow width class', arrowWidthClass);
   return (
     <div className={`${arrowWidthClass}`}>
       <div
@@ -341,21 +423,19 @@ function WordImage({ word }: { word: string }) {
       layoutId={`word-image-${word}`}
       src={`word-images/${word}.png`}
       alt={word}
-      className="rounded-3xl tall:h-[512px] h-[384px] fade-in border-2 border-black"
+      className="rounded-3xl fade-in min-h-0 object-contain border-black border-2"
     />
   );
 }
 
 function DemeritImage({ index }: { index: number }) {
   return (
-    <div className="flex flex-grow py-3 min-h-0 items-center justify-center">
-      <motion.img
-        layoutId={`demerit-image-${index}`}
-        src="demerit.png"
-        alt="demerit"
-        className="rounded-3xl fade-in min-h-0"
-      />
-    </div>
+    <motion.img
+      layoutId={`demerit-image-${index}`}
+      src="demerit.png"
+      alt="demerit"
+      className="rounded-3xl fade-in min-h-0 border-black border-2 justify-self-center"
+    />
   );
 }
 
@@ -367,10 +447,22 @@ function getArrowWidthClass(letterIndex: number) {
   return letterIndex === 0 ? 'w-16' : x;
 }
 
-function GameOverPanel() {
+function GameStatusPanel() {
+  const gameStatus = useRecoilValue(gameStatusState);
+  let text = '';
+  let color = '';
+  if (gameStatus === 'win') {
+    text = 'SUCCESS';
+    color = 'bg-green-500';
+  } else if (gameStatus === 'lose') {
+    text = 'GAME OVER';
+    color = 'bg-red-500';
+  }
   return (
-    <div className="w-[600px] text-center text-9xl p-2 bg-red-500 flex flex-col justify-center rounded-3xl border-4 border-black">
-      <div>GAME OVER</div>
+    <div
+      className={`w-[600px] text-center text-9xl p-2 ${color} flex flex-col justify-center rounded-3xl border-4 border-black`}
+    >
+      {text}
     </div>
   );
 }
@@ -384,7 +476,8 @@ function Board() {
   const arrowAnimationKey = useRecoilValue(arrowAnimationKeyState);
   const useUppercase = useRecoilValue(useUppercaseState);
   const demeritCount = useRecoilValue(demeritCountState);
-  const gameOver = useRecoilValue(gameOverState);
+  const gameStatus = useRecoilValue(gameStatusState);
+  const helpModalOpen = useRecoilValue(helpModalOpenState);
 
   const cursorWord =
     ' '.repeat(letterIndex) + CURSOR_CHAR + ' '.repeat(word.length - letterIndex - 1);
@@ -399,24 +492,44 @@ function Board() {
   } else {
     secondRow = <Arrow letterIndex={letterIndex} animationKey={arrowAnimationKey} />;
   }
-  return (
-    <div className="relative bg-gray-500 flex-1 flex justify-center">
-      <div className="flex flex-col space-y-2 > * items-center">
+
+  let mainPanel;
+  if (showDemeritImage) {
+    mainPanel = (
+      <>
+        <div className="flex-grow" />
+        <DemeritImage index={demeritCount} />
+        <div className="flex-grow" />
+      </>
+    );
+  } else if (gameStatus !== 'in-progress') {
+    mainPanel = (
+      <>
+        <div className="flex-grow" />
+        <GameStatusPanel />
+        <div className="flex-grow" />
+      </>
+    );
+  } else {
+    mainPanel = (
+      <>
         <div className="h-[40%] w-[600px] flex flex-col items-center justify-center">
-          {showWordImage && <WordImage word={word} />}
+          {showWordImage ? <WordImage word={word} /> : null}
         </div>
-        {gameOver ? (
-          <GameOverPanel />
-        ) : (
-          <div className="flex flex-col space-y-2 > *">
-            <Word word={word} useUppercase={useUppercase} />
-            {secondRow}
-          </div>
-        )}
-      </div>
-      <div className="absolute top-8 bottom-8 w-4/5 flex flex-col justify-end items-center">
-        {showDemeritImage && <DemeritImage index={demeritCount} />}
-        <Scoreboard />
+        <div className="flex flex-col space-y-2 > *">
+          <Word word={word} useUppercase={useUppercase} />
+          {secondRow}
+        </div>
+        <div className="flex-grow" />
+      </>
+    );
+  }
+
+  return (
+    <div className="relative bg-gray-500 flex-1 flex flex-col items-center justify-center p-8 space-y-4 > *">
+      {mainPanel}
+      <div className="w-4/5 max-h-[40%] flex flex-col justify-end items-center px-3 justify-self-end">
+        {helpModalOpen ? <HelpModal /> : <Scoreboard />}
       </div>
     </div>
   );
@@ -447,30 +560,13 @@ function cycleWordIndex(wordList: string[], wordIndex: number, direction: Direct
   }
 }
 
-function HelpModal() {
-  const keymap = useRecoilValue(keymapState);
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  const toggleModal = () => setIsOpen(!isOpen);
-
+function HelpModalButton() {
+  const [helpModalOpen, setHelpModalOpen] = useRecoilState(helpModalOpenState);
   return (
-    <div className="fixed bottom-0 right-0 p-3 flex flex-col items-end space-y-2 > *">
-      {isOpen && (
-        <div className="border-2 border-black rounded-md p-2 bg-gray-400">
-          <div className="space-y-1 > *">
-            <p>Key bindings</p>
-            {Array.from(keymap.entries()).map(([key, action]) => (
-              <div key={key} className="flex items-center space-x-2 > *">
-                <Key character={key} />
-                <div>{action}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="fixed bottom-0 right-0 p-3 flex flex-col items-end">
       <button
         className="rounded-full cursor-pointer bg-gray-400 border-black border-2 w-8 h-8 font-bold"
-        onClick={toggleModal}
+        onClick={() => setHelpModalOpen(!helpModalOpen)}
       >
         ?
       </button>
@@ -478,14 +574,10 @@ function HelpModal() {
   );
 }
 
-function KeymapToggle() {
-  const [keymapKey, setKeymapKey] = useRecoilState(keymapKeyState);
+function HelpModal() {
   return (
-    <div
-      className="fixed top-0 right-0 m-3 p-3 cursor-pointer bg-gray-400 rounded-md border-black border-2"
-      onClick={() => setKeymapKey(keymapKey === 'QWERTY' ? 'DVORAK' : 'QWERTY')}
-    >
-      {keymapKey}
+    <div className="bg-gray-400 p-3 rounded-lg border-2 border-black overflow-x-auto w-full">
+      <Keyboard />
     </div>
   );
 }
@@ -510,7 +602,8 @@ function KeyboardListener() {
   const [demeritCount, setDemeritCount] = useRecoilState(demeritCountState);
   const [showDemeritImage, setShowDemeritImage] = useRecoilState(showDemeritImageState);
   const demeritLimit = useRecoilValue(demeritLimitState);
-  const setGameOver = useRecoilState(gameOverState)[1];
+  const wordsPerRound = useRecoilValue(wordsPerRoundState);
+  const numRounds = useRecoilValue(numRoundsState);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -518,14 +611,10 @@ function KeyboardListener() {
       const word = wordList[wordIndex];
       const keymap = KEYMAPS.get(keymapKey)!;
       const action = keymap.get(event.key);
-      console.log(event);
 
       if (action === 'add-demerit') {
         if (showDemeritImage) {
           setShowDemeritImage(false);
-          if (demeritCount + 1 >= demeritLimit) {
-            setGameOver(true);
-          }
           setDemeritCount(demeritCount + 1);
         } else {
           playSound(ADD_DEMERIT_SOUND);
@@ -638,8 +727,9 @@ function KeyboardListener() {
     setMode,
     demeritCount,
     setDemeritCount,
-    setGameOver,
     demeritLimit,
+    wordsPerRound,
+    numRounds,
   ]);
 
   return null;
@@ -652,8 +742,7 @@ function App() {
       <div className="flex w-screen h-screen bg-black overflow-hidden">
         <Sidebar />
         <Board />
-        <HelpModal />
-        <KeymapToggle />
+        <HelpModalButton />
       </div>
     </RecoilRoot>
   );

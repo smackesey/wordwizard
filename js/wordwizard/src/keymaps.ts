@@ -1,4 +1,7 @@
-export type Keymap = 'QWERTY' | 'DVORAK';
+export type Keymap = 'qwerty' | 'dvorak';
+
+export type KeySpec = { character: string; command?: string };
+export type KeyboardLayout = KeySpec[][];
 
 export type Action =
   | 'add-demerit'
@@ -42,6 +45,87 @@ const DVORAK_KEYMAP: Map<string, Action> = new Map([
 ]);
 
 export const KEYMAPS: Map<Keymap, Map<string, Action>> = new Map([
-  ['QWERTY', QWERTY_KEYMAP],
-  ['DVORAK', DVORAK_KEYMAP],
+  ['qwerty', QWERTY_KEYMAP],
+  ['dvorak', DVORAK_KEYMAP],
+]);
+
+export const KEYBOARD_LAYOUTS: Map<Keymap, KeyboardLayout> = new Map([
+  [
+    'qwerty',
+    [
+      [
+        { character: 'Q' },
+        { character: 'W' },
+        { character: 'E' },
+        { character: 'R' },
+        { character: 'T' },
+        { character: 'Y' },
+        { character: 'U' },
+        { character: 'I' },
+        { character: 'O' },
+        { character: 'P' },
+      ],
+      [
+        { character: 'A' },
+        { character: 'S' },
+        { character: 'D' },
+        { character: 'F' },
+        { character: 'G' },
+        { character: 'H' },
+        { character: 'J' },
+        { character: 'K' },
+        { character: 'L' },
+      ],
+      [
+        { character: 'Z' },
+        { character: 'X' },
+        { character: 'C' },
+        { character: 'V' },
+        { character: 'B' },
+        { character: 'N' },
+        { character: 'M' },
+      ],
+    ],
+  ],
+  [
+    'dvorak',
+    [
+      [
+        { character: "'" },
+        { character: ',' },
+        { character: '.' },
+        { character: 'P' },
+        { character: 'Y' },
+        { character: 'F' },
+        { character: 'G' },
+        { character: 'C' },
+        { character: 'R' },
+        { character: 'L' },
+      ],
+      [
+        { character: 'A' },
+        { character: 'O' },
+        { character: 'E' },
+        { character: 'U' },
+        { character: 'I' },
+        { character: 'D' },
+        { character: 'H' },
+        { character: 'T' },
+        { character: 'N' },
+        { character: 'S' },
+      ],
+      [
+        { character: ';' },
+        { character: 'Q' },
+        { character: 'J' },
+        { character: 'K' },
+        { character: 'X' },
+        { character: 'B' },
+        { character: 'M' },
+        { character: 'W' },
+        { character: 'V' },
+        { character: 'Z' },
+      ],
+    ],
+  ],
 ]);
