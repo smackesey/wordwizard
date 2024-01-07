@@ -6,16 +6,15 @@ import { motion } from 'framer-motion';
 
 import { useRecoilValue } from 'recoil';
 import { HelpModal } from './HelpModal';
-import { Arrow, Word } from './phonograms';
+import { Word } from './phonograms';
 import { Scoreboard } from './Scoreboard';
 import {
-  arrowAnimationKeyState,
   demeritCountState,
   GameStatus,
   gameStatusState,
   helpModalOpenState,
+  inLetterWaveState,
   letterIndexState,
-  modeState,
   showDemeritImageState,
   showWordImageState,
   useUppercaseState,
@@ -23,23 +22,15 @@ import {
 } from './state';
 
 export function Board() {
-  const mode = useRecoilValue(modeState);
   const word = useRecoilValue(wordState);
   const letterIndex = useRecoilValue(letterIndexState);
   const showWordImage = useRecoilValue(showWordImageState);
   const showDemeritImage = useRecoilValue(showDemeritImageState);
-  const arrowAnimationKey = useRecoilValue(arrowAnimationKeyState);
   const useUppercase = useRecoilValue(useUppercaseState);
   const demeritCount = useRecoilValue(demeritCountState);
   const gameStatus = useRecoilValue(gameStatusState);
   const helpModalOpen = useRecoilValue(helpModalOpenState);
-
-  let secondRow;
-  if (mode === 'letter') {
-    secondRow = <div className="h-16" />;
-  } else {
-    secondRow = <Arrow letterIndex={letterIndex} animationKey={arrowAnimationKey} />;
-  }
+  const inLetterWave = useRecoilValue(inLetterWaveState);
 
   let mainPanel;
   if (showDemeritImage) {
@@ -59,7 +50,7 @@ export function Board() {
       </>
     );
   } else {
-    const markedIndex = mode === 'word' || showWordImage ? undefined : letterIndex;
+    const markedIndex = showWordImage ? undefined : letterIndex;
     mainPanel = (
       <>
         <div className="h-[40%] w-[600px] flex flex-col items-center justify-center">
@@ -67,9 +58,13 @@ export function Board() {
         </div>
         <div className="flex flex-col space-y-2 > *">
           <div className="h-24 flex flex-col justify-end">
-            <Word word={word} useUppercase={useUppercase} markedIndex={markedIndex} />
+            <Word
+              word={word}
+              useUppercase={useUppercase}
+              markedIndex={markedIndex}
+              inLetterWave={inLetterWave}
+            />
           </div>
-          {secondRow}
         </div>
         <div className="flex-grow" />
       </>

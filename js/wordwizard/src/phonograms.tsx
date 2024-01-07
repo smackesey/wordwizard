@@ -11,47 +11,28 @@ export function Word({
   useUppercase,
   dimmed,
   markedIndex,
+  inLetterWave,
 }: {
   word: string;
   useUppercase: boolean;
   dimmed?: boolean;
   markedIndex?: number;
+  inLetterWave?: boolean;
 }) {
   return (
     <div className="flex font-mono items-end space-x-2 > *">
       {word.split('').map((letter, i) => {
         const text = useUppercase ? letter.toUpperCase() : letter;
-        return <PhonogramTile letter={text} dimmed={dimmed} key={i} marked={i === markedIndex} />;
+        return (
+          <PhonogramTile
+            letter={text}
+            dimmed={dimmed}
+            key={i}
+            marked={i === markedIndex}
+            inLetterWave={inLetterWave}
+          />
+        );
       })}
-    </div>
-  );
-}
-
-export function Arrow({
-  animationKey,
-  letterIndex,
-}: {
-  animationKey: number;
-  letterIndex: number;
-}) {
-  // NOTE: I tried to generate Tailwind classes using arbitrary values here
-  // (e.g. `w-[4rem]`), but it did not work-- some of these classes seem to
-  // work and others don't.
-  const n = (letterIndex + 1) * 4 + letterIndex * 0.5;
-  const arrowContainerStyle = { width: `${n}rem` };
-  const style = {
-    animationDuration: (letterIndex + 1) * 0.5 + 's',
-  };
-  return (
-    <div style={arrowContainerStyle}>
-      <div
-        key={animationKey}
-        style={style}
-        className={`arrow-container bg-white self-start rounded-md w-8 h-16 flex items-center p-2`}
-      >
-        <div className="h-1 flex-grow bg-black -mr-2" />
-        <div className="text-2xl">&#9654;</div>
-      </div>
     </div>
   );
 }
@@ -60,10 +41,12 @@ function PhonogramTile({
   letter,
   dimmed,
   marked,
+  inLetterWave,
 }: {
   letter: string;
   dimmed?: boolean;
   marked?: boolean;
+  inLetterWave?: boolean;
 }) {
   let bgClass: string;
   if (letter === ' ') {
@@ -79,6 +62,7 @@ function PhonogramTile({
   return (
     <motion.div
       layout
+      transition={{ duration: inLetterWave ? 1.0 : undefined }}
       className={`${bgClass} ${opacityClass} ${sizeClass} ${borderClass} rounded-md flex items-center justify-center`}
     >
       {letter}

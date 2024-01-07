@@ -14,7 +14,7 @@ export type Action =
   | 'previous-word'
   | 'reset'
   | 'toggle-completed'
-  | 'word-mode';
+  | 'letter-wave';
 
 export const KEYMAPS: Map<Keymap, Map<string, Action>> = new Map([
   [
@@ -29,7 +29,7 @@ export const KEYMAPS: Map<Keymap, Map<string, Action>> = new Map([
       ['k', 'next-uncompleted-word'],
       [',', 'previous-word'],
       ['m', 'next-word'],
-      ['o', 'word-mode'],
+      ['o', 'letter-wave'],
       ['p', 'reset'],
     ]),
   ],
@@ -45,7 +45,7 @@ export const KEYMAPS: Map<Keymap, Map<string, Action>> = new Map([
       ['t', 'next-uncompleted-word'],
       ['v', 'previous-word'],
       ['w', 'next-word'],
-      ['r', 'word-mode'],
+      ['r', 'letter-wave'],
       ['l', 'reset'],
     ]),
   ],

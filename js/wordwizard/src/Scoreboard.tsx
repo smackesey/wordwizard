@@ -19,6 +19,7 @@ export function Scoreboard() {
   const demeritCount = useRecoilValue(demeritCountState);
   const demeritLimit = useRecoilValue(demeritLimitState);
   const wordsPerRound = useRecoilValue(wordsPerRoundState);
+  const completedWordsInRound = completedWords.length % wordsPerRound;
 
   return (
     <motion.div
@@ -28,7 +29,14 @@ export function Scoreboard() {
       flex flex-col items-center justify-center space-y-2 > *
       "
     >
-      <div className="text-3xl font-bold">Score: {completedWords.length}</div>
+      <div className="text-3xl font-bold flex w-full mb-2 space-x-1 > *">
+        <Fraction
+          numerator={completedWords.length}
+          denominator={wordsPerRound * (roundIndex + 1)}
+        />
+        <div className="text-center flex-grow">Score</div>
+        <Fraction numerator={completedWordsInRound} denominator={wordsPerRound} />
+      </div>
       <CardCollection
         roundIndex={roundIndex}
         wordsPerRound={wordsPerRound}
@@ -37,6 +45,14 @@ export function Scoreboard() {
       <hr className="h-[2px] flex-shrink-0 border-none bg-black rounded-md w-full" />
       <DemeritMeter demeritLimit={demeritLimit} demeritCount={demeritCount} />
     </motion.div>
+  );
+}
+
+function Fraction({ numerator, denominator }: { numerator: number; denominator: number }) {
+  return (
+    <div>
+      <sup>{numerator}</sup>/<sub>{denominator}</sub>
+    </div>
   );
 }
 

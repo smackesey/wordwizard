@@ -1,6 +1,6 @@
 import { RecoilRoot } from 'recoil';
 import './App.css';
-import { Board } from './board';
+import { Board } from './Board';
 import { HelpModalButton } from './HelpModal';
 import { Sidebar } from './sidebar';
 import { KeyboardListener } from './state';

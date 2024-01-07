@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { atom, selector, useRecoilState, useRecoilValue } from 'recoil';
-import { ADD_DEMERIT_SOUND, LETTER_FORWARD_SOUND, playSound, WORD_COMPLETE_SOUND } from './audio';
+import { ADD_DEMERIT_SOUND, MOVE_LETTER_SOUND, playSound, WORD_COMPLETE_SOUND } from './audio';
 import { KeyboardLayout, KEYBOARD_LAYOUTS, Keymap, KEYMAPS } from './keymaps';
 import { localStorageGet } from './settings';
 import { WORD_LISTS } from './words';
@@ -12,7 +12,6 @@ import { WORD_LISTS } from './words';
 // ****************************************************************************
 // ***** TYPES ****************************************************************
 
-export type Mode = 'letter' | 'word';
 export type GameStatus = 'in-progress' | 'lose' | 'win';
 
 // *****************************************************************************
@@ -34,6 +33,7 @@ export const demeritLimitState = atom<number>({
   key: 'demeritLimit',
   default: localStorageGet('demeritLimit', 5),
 });
+export const inLetterWaveState = atom<boolean>({ key: 'inLetterWave', default: false });
 export const numRoundsState = atom<number>({
   key: 'numRounds',
   default: localStorageGet('numRounds', 3),
@@ -50,11 +50,9 @@ export const wordListKeyState = atom<string>({
 
 // ----- TRANSIENT
 
-export const arrowAnimationKeyState = atom<number>({ key: 'arrowAnimationKey', default: 0 });
 export const completedWordsState = atom<string[]>({ key: 'completedWords', default: [] });
 export const demeritCountState = atom<number>({ key: 'demeritCount', default: 0 });
 export const letterIndexState = atom<number>({ key: 'letterIndex', default: 0 });
-export const modeState = atom<Mode>({ key: 'mode', default: 'letter' });
 export const showDemeritImageState = atom<boolean>({ key: 'showDemeritImage', default: false });
 export const showWordImageState = atom<boolean>({ key: 'showWordImage', default: false });
 export const wordIndexState = atom<number>({ key: 'wordIndex', default: 0 });
@@ -128,19 +126,18 @@ export const gameStatusState = selector<GameStatus>({
 export function KeyboardListener() {
   const keymapKey = useRecoilValue(keymapKeyState);
   const wordListKey = useRecoilValue(wordListKeyState);
-  const [mode, setMode] = useRecoilState(modeState);
   const [wordIndex, setWordIndex] = useRecoilState(wordIndexState);
   const [letterIndex, setLetterIndex] = useRecoilState(letterIndexState);
   const [completedWords, setCompletedWords] = useRecoilState(completedWordsState);
   const showCompleted = useRecoilValue(showCompletedState);
   const [showWordImage, setShowWordImage] = useRecoilState(showWordImageState);
-  const [arrowAnimationKey, setArrowAnimationKey] = useRecoilState(arrowAnimationKeyState);
   const [demeritCount, setDemeritCount] = useRecoilState(demeritCountState);
   const [showDemeritImage, setShowDemeritImage] = useRecoilState(showDemeritImageState);
   const demeritLimit = useRecoilValue(demeritLimitState);
   const wordsPerRound = useRecoilValue(wordsPerRoundState);
   const numRounds = useRecoilValue(numRoundsState);
   const wordList = useRecoilValue(wordListState);
+  const [inLetterWave, setInLetterWave] = useRecoilState(inLetterWaveState);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -156,29 +153,24 @@ export function KeyboardListener() {
           playSound(ADD_DEMERIT_SOUND);
           setShowDemeritImage(true);
         }
-      } else if (action === 'word-mode') {
-        if (mode === 'word') {
-          setArrowAnimationKey(arrowAnimationKey + 1);
-        } else {
-          setMode('word');
+      } else if (action === 'letter-wave') {
+        if (!inLetterWave) {
+          setInLetterWave(true);
+          setLetterIndex(word.length);
+          letterWave(word.length, setLetterIndex, setInLetterWave);
         }
       } else if (action === 'letter-mode') {
-        if (mode === 'word') {
-          setMode('letter');
+        if (letterIndex === -1) {
+          setLetterIndex(0);
         }
       } else if (action === 'next-letter') {
-        const newPosition = letterIndex === word.length - 1 ? 0 : letterIndex + 1;
+        const newPosition = letterIndex >= word.length - 1 ? 0 : letterIndex + 1;
         setLetterIndex(newPosition);
-        if (mode === 'word') {
-          setArrowAnimationKey(arrowAnimationKey + 1);
-        }
-        playSound(LETTER_FORWARD_SOUND);
+        playSound(MOVE_LETTER_SOUND);
       } else if (action === 'previous-letter') {
-        const newPosition = letterIndex === 0 ? word.length - 1 : letterIndex - 1;
+        const newPosition = letterIndex <= 0 ? word.length - 1 : letterIndex - 1;
         setLetterIndex(newPosition);
-        if (mode === 'word') {
-          setArrowAnimationKey(arrowAnimationKey + 1);
-        }
+        playSound(MOVE_LETTER_SOUND);
       } else if (action === 'next-uncompleted-word') {
         const newWordIndex = cycleUncompletedWordIndex(
           wordList,
@@ -188,12 +180,10 @@ export function KeyboardListener() {
         )!;
         setWordIndex(newWordIndex);
         setLetterIndex(0);
-        setMode('letter');
       } else if (action === 'next-word') {
         const newWordIndex = cycleWordIndex(wordList, wordIndex, 'forward')!;
         setWordIndex(newWordIndex);
         setLetterIndex(0);
-        setMode('letter');
       } else if (action === 'previous-uncompleted-word') {
         const newWordIndex = cycleUncompletedWordIndex(
           wordList,
@@ -203,12 +193,10 @@ export function KeyboardListener() {
         )!;
         setWordIndex(newWordIndex);
         setLetterIndex(0);
-        setMode('letter');
       } else if (action === 'previous-word') {
         const newWordIndex = cycleWordIndex(wordList, wordIndex, 'backward')!;
         setWordIndex(newWordIndex);
         setLetterIndex(0);
-        setMode('letter');
       } else if (action === 'toggle-completed') {
         if (showWordImage) {
           setShowWordImage(false);
@@ -223,7 +211,6 @@ export function KeyboardListener() {
             setWordIndex(newWordIndex);
           }
           setLetterIndex(0);
-          setMode('letter');
         } else if (completedWords.includes(word)) {
           setCompletedWords(completedWords.filter((completedWord) => completedWord !== word));
         } else {
@@ -245,34 +232,53 @@ export function KeyboardListener() {
     };
   }, [
     wordListKey,
-    mode,
     wordIndex,
     letterIndex,
     completedWords,
     keymapKey,
     showCompleted,
-    arrowAnimationKey,
     showWordImage,
     showDemeritImage,
     setShowDemeritImage,
-    setArrowAnimationKey,
     setCompletedWords,
     setWordIndex,
     setShowWordImage,
     setLetterIndex,
-    setMode,
     demeritCount,
     setDemeritCount,
     demeritLimit,
     wordsPerRound,
     numRounds,
     wordList,
+    inLetterWave,
+    setInLetterWave,
   ]);
 
   return null;
 }
 
 type Direction = 'forward' | 'backward';
+
+const WAVE_FREQUENCY = 500;
+
+function letterWave(
+  length: number,
+  setLetterIndex: (i: number) => void,
+  setInLetterWave: (x: boolean) => void,
+) {
+  let counter = 0;
+  const waveFn = () => {
+    console.log('letter wave', counter);
+    setLetterIndex(counter);
+    counter++;
+    if (counter <= length) {
+      setTimeout(waveFn, WAVE_FREQUENCY);
+    } else {
+      setInLetterWave(false);
+    }
+  };
+  waveFn();
+}
 
 function cycleUncompletedWordIndex(
   wordList: string[],
