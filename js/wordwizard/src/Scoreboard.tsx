@@ -8,8 +8,10 @@ import {
   completedWordsState,
   demeritCountState,
   demeritLimitState,
+  imageFormatState,
   numRoundsState,
   roundIndexState,
+  wordListKeyState,
   wordsPerRoundState,
 } from './state';
 
@@ -65,6 +67,8 @@ function CardCollection({
   wordsPerRound: number;
   completedWords: string[];
 }) {
+  const wordListKey = useRecoilValue(wordListKeyState);
+  const imageFormat = useRecoilValue(imageFormatState);
   return (
     <div className="w-full flex flex-col space-y-2 > *">
       {[...Array(roundIndex + 1)].map((_, i) => (
@@ -75,7 +79,7 @@ function CardCollection({
             const img =
               word === undefined ? null : (
                 <motion.img
-                  src={`word-images/${word}.png`}
+                  src={`word-images/${wordListKey}/${word}.${imageFormat}`}
                   alt={word}
                   className="object-cover rounded-lg transition-opacity"
                   layoutId={`word-image-${word}`}

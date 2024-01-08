@@ -14,11 +14,13 @@ import {
   GameStatus,
   gameStatusState,
   helpModalOpenState,
+  imageFormatState,
   inLetterWaveState,
   letterIndexState,
   showDemeritImageState,
   showWordImageState,
   useUppercaseState,
+  wordListKeyState,
   wordState,
 } from './state';
 
@@ -86,10 +88,12 @@ export function Board() {
 }
 
 function WordImage({ word }: { word: string }) {
+  const wordListKey = useRecoilValue(wordListKeyState);
+  const imageFormat = useRecoilValue(imageFormatState);
   return (
     <motion.img
       layoutId={`word-image-${word}`}
-      src={`word-images/${word}.png`}
+      src={`word-images/${wordListKey}/${word}.${imageFormat}`}
       alt={word}
       className="rounded-3xl animate-fade-in min-h-0 object-contain border-black border-2"
     />

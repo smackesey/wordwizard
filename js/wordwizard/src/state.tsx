@@ -78,10 +78,17 @@ export const wordListState = selector<string[]>({
     const wordListKey = get(wordListKeyState);
     const completedWords = get(completedWordsState);
     const showCompleted = get(showCompletedState);
-    const fullWordList = WORD_LISTS.get(wordListKey)!;
+    const fullWordList = WORD_LISTS.get(wordListKey)!.words;
     return showCompleted
       ? fullWordList
       : fullWordList.filter((word) => !completedWords.includes(word));
+  },
+});
+export const imageFormatState = selector<string>({
+  key: 'imageFormat',
+  get: ({ get }) => {
+    const wordListKey = get(wordListKeyState);
+    return WORD_LISTS.get(wordListKey)!.imageFormat;
   },
 });
 export const wordState = selector<string>({
