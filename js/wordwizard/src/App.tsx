@@ -2,7 +2,7 @@ import { RecoilRoot } from 'recoil';
 import './App.css';
 import { Board } from './Board';
 import { HelpModalButton } from './HelpModal';
-import { Sidebar } from './sidebar';
+import { Sidebar } from './Sidebar';
 import { KeyboardListener } from './state';
 
 function App() {

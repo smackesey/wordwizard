@@ -1,6 +1,0 @@
-map
-pam
-spam
-sam
-amps
-sap
