@@ -33,7 +33,6 @@ export const demeritLimitState = atom<number>({
   key: 'demeritLimit',
   default: localStorageGet('demeritLimit', 5),
 });
-export const inLetterWaveState = atom<boolean>({ key: 'inLetterWave', default: false });
 export const numRoundsState = atom<number>({
   key: 'numRounds',
   default: localStorageGet('numRounds', 3),
@@ -46,6 +45,11 @@ export const helpModalOpenState = atom<boolean>({ key: 'helpModalOpen', default:
 export const wordListKeyState = atom<string>({
   key: 'wordListKey',
   default: localStorageGet('wordListKey', 'images'),
+});
+export const inLetterWaveState = atom<boolean>({ key: 'inLetterWave', default: false });
+export const letterWaveSpeedState = atom<number>({
+  key: 'letterWaveSpeed',
+  default: localStorageGet('letterWaveSpeed', 5),
 });
 
 // ----- TRANSIENT
@@ -138,6 +142,7 @@ export function KeyboardListener() {
   const numRounds = useRecoilValue(numRoundsState);
   const wordList = useRecoilValue(wordListState);
   const [inLetterWave, setInLetterWave] = useRecoilState(inLetterWaveState);
+  const letterWaveSpeed = useRecoilValue(letterWaveSpeedState);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -157,7 +162,7 @@ export function KeyboardListener() {
         if (!inLetterWave) {
           setInLetterWave(true);
           setLetterIndex(word.length);
-          letterWave(word.length, setLetterIndex, setInLetterWave);
+          letterWave(word.length, setLetterIndex, setInLetterWave, letterWaveSpeed);
         }
       } else if (action === 'letter-mode') {
         if (letterIndex === -1) {
@@ -252,6 +257,7 @@ export function KeyboardListener() {
     wordList,
     inLetterWave,
     setInLetterWave,
+    letterWaveSpeed,
   ]);
 
   return null;
@@ -259,20 +265,20 @@ export function KeyboardListener() {
 
 type Direction = 'forward' | 'backward';
 
-const WAVE_FREQUENCY = 500;
+export const LETTER_WAVE_SPEED_BASE = 2000;
 
 function letterWave(
   length: number,
   setLetterIndex: (i: number) => void,
   setInLetterWave: (x: boolean) => void,
+  speed: number,
 ) {
   let counter = 0;
   const waveFn = () => {
-    console.log('letter wave', counter);
     setLetterIndex(counter);
     counter++;
     if (counter <= length) {
-      setTimeout(waveFn, WAVE_FREQUENCY);
+      setTimeout(waveFn, LETTER_WAVE_SPEED_BASE / speed);
     } else {
       setInLetterWave(false);
     }

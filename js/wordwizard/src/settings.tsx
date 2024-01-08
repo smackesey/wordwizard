@@ -87,6 +87,7 @@ export function SettingsSlider({
   setValue,
   min = 2,
   max = 10,
+  step = 1,
 }: {
   settingsKey: string;
   label: string;
@@ -94,6 +95,7 @@ export function SettingsSlider({
   setValue: (x: number) => void;
   min?: number;
   max?: number;
+  step?: number;
 }) {
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(event.target.value);
@@ -109,6 +111,7 @@ export function SettingsSlider({
           type="range"
           min={min} // Minimum value
           max={max} // Maximum value
+          step={step} // Increment/decrement by this value
           value={value}
           onChange={onChange}
         />

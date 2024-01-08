@@ -6,7 +6,7 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 import { KEYMAPS } from './keymaps';
 import { Word } from './phonograms';
 import { SettingsSelect, SettingsSlider, SettingsToggle } from './settings';
-import { useUppercaseState, wordListState } from './state';
+import { letterWaveSpeedState, useUppercaseState, wordListState } from './state';
 import { wordsPerRoundState } from './state';
 import { numRoundsState } from './state';
 import { demeritLimitState } from './state';
@@ -28,6 +28,7 @@ export function Sidebar() {
   const [wordsPerRound, setWordsPerRound] = useRecoilState(wordsPerRoundState);
   const [keymapKey, setKeymapKey] = useRecoilState(keymapKeyState);
   const wordList = useRecoilValue(wordListState);
+  const [letterWaveSpeed, setLetterWaveSpeed] = useRecoilState(letterWaveSpeedState);
 
   return (
     <div className="bg-gray-300 p-2 w-1/4 flex flex-col">
@@ -78,12 +79,21 @@ export function Sidebar() {
           label="# Rounds"
           value={numRounds}
           setValue={setNumRounds}
+          min={1}
         />
         <SettingsSlider
           settingsKey="wordsPerRound"
           label="Words / round"
           value={wordsPerRound}
           setValue={setWordsPerRound}
+        />
+        <SettingsSlider
+          settingsKey="letterWaveSpeed"
+          label="Letter wave speed"
+          value={letterWaveSpeed}
+          setValue={setLetterWaveSpeed}
+          min={1}
+          max={10}
         />
         <SettingsSelect
           settingsKey="keymapKey"

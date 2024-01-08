@@ -5,6 +5,7 @@
 import { motion } from 'framer-motion';
 
 import { useRecoilValue } from 'recoil';
+import { playSound, VICTORY_SONG } from './audio';
 import { HelpModal } from './HelpModal';
 import { Word } from './phonograms';
 import { Scoreboard } from './Scoreboard';
@@ -110,7 +111,8 @@ function GameStatusPanel() {
   const gameStatus = useRecoilValue(gameStatusState);
   const classes = 'rounded-3xl animate-fade-in min-h-0 border-black border-2 justify-self-center';
   if (gameStatus === 'win') {
-    return <img src="unicorn.webp" alt="unicorn" className={classes} />;
+    playSound(VICTORY_SONG);
+    return <img src="happy-unicorn.gif" alt="unicorn" className={classes} />;
   } else if (gameStatus === 'lose') {
     return <img src="demerit.png" alt="demerit" className={classes} />;
   } else {

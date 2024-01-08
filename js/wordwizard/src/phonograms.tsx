@@ -3,6 +3,8 @@
 // ########################
 
 import { motion } from 'framer-motion';
+import { useRecoilValue } from 'recoil';
+import { letterWaveSpeedState, LETTER_WAVE_SPEED_BASE } from './state';
 
 const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
@@ -48,6 +50,7 @@ function PhonogramTile({
   marked?: boolean;
   inLetterWave?: boolean;
 }) {
+  const letterWaveSpeed = useRecoilValue(letterWaveSpeedState);
   let bgClass: string;
   if (letter === ' ') {
     bgClass = '';
@@ -62,7 +65,9 @@ function PhonogramTile({
   return (
     <motion.div
       layout
-      transition={{ duration: inLetterWave ? 1.0 : undefined }}
+      transition={{
+        duration: inLetterWave ? LETTER_WAVE_SPEED_BASE / (1000 * letterWaveSpeed) : undefined,
+      }}
       className={`${bgClass} ${opacityClass} ${sizeClass} ${borderClass} rounded-md flex items-center justify-center`}
     >
       {letter}
