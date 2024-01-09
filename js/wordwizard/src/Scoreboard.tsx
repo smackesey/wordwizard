@@ -72,7 +72,10 @@ function CardCollection({
   return (
     <div className="w-full flex flex-col space-y-2 > *">
       {[...Array(roundIndex + 1)].map((_, i) => (
-        <div className="flex w-full justify-center space-x-2 > * animate-fade-in-fast" key={i}>
+        <div
+          className="flex w-full items-center justify-center space-x-2 > * animate-fade-in-fast"
+          key={i}
+        >
           {[...Array(wordsPerRound)].map((_, j) => {
             const index = i * wordsPerRound + j;
             const word = completedWords[index];
@@ -123,9 +126,11 @@ export function ImageTile({ children }: { children: React.ReactNode }) {
   const numRounds = useRecoilValue(numRoundsState);
   const tileSize = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
   const style = { width: `${tileSize}vh` };
+  console.log('children', children);
+  const squareClass = children ? '' : 'square';
   return (
-    <div style={style} className={`square rounded-lg border-2 border-black`}>
+    <motion.div layout style={style} className={`${squareClass} rounded-lg border-2 border-black`}>
       {children}
-    </div>
+    </motion.div>
   );
 }
