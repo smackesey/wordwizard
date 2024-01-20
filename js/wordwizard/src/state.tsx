@@ -29,6 +29,7 @@ export const useUppercaseState = atom<boolean>({
   key: 'useUppercase',
   default: localStorageGet('useUppercase', false),
 });
+export const letterModeState = atom<boolean>({ key: 'letterMode', default: false });
 export const demeritLimitState = atom<number>({
   key: 'demeritLimit',
   default: localStorageGet('demeritLimit', 5),
@@ -150,6 +151,7 @@ export function KeyboardListener() {
   const wordList = useRecoilValue(wordListState);
   const [inLetterWave, setInLetterWave] = useRecoilState(inLetterWaveState);
   const letterWaveSpeed = useRecoilValue(letterWaveSpeedState);
+  const letterMode = useRecoilValue(letterModeState);
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -176,13 +178,17 @@ export function KeyboardListener() {
           setLetterIndex(0);
         }
       } else if (action === 'next-letter') {
-        const newPosition = letterIndex >= word.length - 1 ? 0 : letterIndex + 1;
-        setLetterIndex(newPosition);
-        playSound(MOVE_LETTER_SOUND);
+        if (letterMode) {
+          const newPosition = letterIndex >= word.length - 1 ? 0 : letterIndex + 1;
+          setLetterIndex(newPosition);
+          playSound(MOVE_LETTER_SOUND);
+        }
       } else if (action === 'previous-letter') {
-        const newPosition = letterIndex <= 0 ? word.length - 1 : letterIndex - 1;
-        setLetterIndex(newPosition);
-        playSound(MOVE_LETTER_SOUND);
+        if (letterMode) {
+          const newPosition = letterIndex <= 0 ? word.length - 1 : letterIndex - 1;
+          setLetterIndex(newPosition);
+          playSound(MOVE_LETTER_SOUND);
+        }
       } else if (action === 'next-uncompleted-word') {
         const newWordIndex = cycleUncompletedWordIndex(
           wordList,
@@ -265,6 +271,7 @@ export function KeyboardListener() {
     inLetterWave,
     setInLetterWave,
     letterWaveSpeed,
+    letterMode,
   ]);
 
   return null;

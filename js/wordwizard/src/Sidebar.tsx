@@ -6,7 +6,7 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 import { KEYMAPS } from './keymaps';
 import { Word } from './phonograms';
 import { SettingsSelect, SettingsSlider, SettingsToggle } from './settings';
-import { letterWaveSpeedState, useUppercaseState, wordListState } from './state';
+import { letterModeState, letterWaveSpeedState, useUppercaseState, wordListState } from './state';
 import { wordsPerRoundState } from './state';
 import { numRoundsState } from './state';
 import { demeritLimitState } from './state';
@@ -29,6 +29,7 @@ export function Sidebar() {
   const [keymapKey, setKeymapKey] = useRecoilState(keymapKeyState);
   const wordList = useRecoilValue(wordListState);
   const [letterWaveSpeed, setLetterWaveSpeed] = useRecoilState(letterWaveSpeedState);
+  const [letterMode, setLetterMode] = useRecoilState(letterModeState);
 
   return (
     <div className="bg-gray-300 p-2 w-1/4 flex flex-col">
@@ -55,6 +56,12 @@ export function Sidebar() {
           value={wordListKey}
           setValue={setWordListKey}
           options={Array.from(WORD_LISTS.keys())}
+        />
+        <SettingsToggle
+          settingsKey="letterMode"
+          label="Letter mode"
+          value={letterMode}
+          setValue={setLetterMode}
         />
         <SettingsToggle
           settingsKey="showCompleted"

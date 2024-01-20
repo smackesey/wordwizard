@@ -17,6 +17,7 @@ import {
   imageFormatState,
   inLetterWaveState,
   letterIndexState,
+  letterModeState,
   showDemeritImageState,
   showWordImageState,
   useUppercaseState,
@@ -34,6 +35,7 @@ export function Board() {
   const gameStatus = useRecoilValue(gameStatusState);
   const helpModalOpen = useRecoilValue(helpModalOpenState);
   const inLetterWave = useRecoilValue(inLetterWaveState);
+  const letterMode = useRecoilValue(letterModeState);
 
   let mainPanel;
   if (showDemeritImage) {
@@ -53,7 +55,8 @@ export function Board() {
       </>
     );
   } else {
-    const markedIndex = showWordImage ? undefined : letterIndex;
+    const markedIndex = (letterMode || inLetterWave) && !showWordImage ? letterIndex : undefined;
+    // const markedIndex = showWordImage ? undefined : letterIndex;
     mainPanel = (
       <>
         <div className="h-[40%] w-[600px] flex flex-col items-center justify-center">
