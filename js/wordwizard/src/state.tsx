@@ -120,15 +120,25 @@ export const gameStatusState = selector<GameStatus>({
     const demeritCount = get(demeritCountState);
     const demeritLimit = get(demeritLimitState);
     const completedWords = get(completedWordsState);
-    const numRounds = get(numRoundsState);
-    const wordsPerRound = get(wordsPerRoundState);
+    const totalNumWords = get(totalNumWordsState);
     if (demeritCount >= demeritLimit) {
       return 'lose';
-    } else if (completedWords.length === numRounds * wordsPerRound) {
+    } else if (completedWords.length === totalNumWords) {
       return 'win';
     } else {
       return 'in-progress';
     }
+  },
+});
+export const totalNumWordsState = selector<number>({
+  key: 'totalNumWords',
+  get: ({ get }) => {
+    const wordListKey = get(wordListKeyState);
+    const fullWordList = WORD_LISTS.get(wordListKey)!.words;
+    const numRounds = get(numRoundsState);
+    const wordsPerRound = get(wordsPerRoundState);
+    const userSpecified = numRounds * wordsPerRound;
+    return Math.min(fullWordList.length, userSpecified);
   },
 });
 

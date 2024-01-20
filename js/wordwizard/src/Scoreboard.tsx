@@ -11,6 +11,7 @@ import {
   imageFormatState,
   numRoundsState,
   roundIndexState,
+  totalNumWordsState,
   wordListKeyState,
   wordsPerRoundState,
 } from './state';
@@ -22,6 +23,7 @@ export function Scoreboard() {
   const demeritLimit = useRecoilValue(demeritLimitState);
   const wordsPerRound = useRecoilValue(wordsPerRoundState);
   const completedWordsInRound = completedWords.length % wordsPerRound;
+  const totalNumWords = useRecoilValue(totalNumWordsState);
 
   return (
     <motion.div
@@ -32,10 +34,7 @@ export function Scoreboard() {
       "
     >
       <div className="text-3xl font-bold flex w-full mb-2 space-x-1 > *">
-        <Fraction
-          numerator={completedWords.length}
-          denominator={wordsPerRound * (roundIndex + 1)}
-        />
+        <Fraction numerator={completedWords.length} denominator={totalNumWords} />
         <div className="text-center flex-grow">Score</div>
         <Fraction numerator={completedWordsInRound} denominator={wordsPerRound} />
       </div>
@@ -69,30 +68,40 @@ function CardCollection({
 }) {
   const wordListKey = useRecoilValue(wordListKeyState);
   const imageFormat = useRecoilValue(imageFormatState);
+  const totalNumWords = useRecoilValue(totalNumWordsState);
+  const numRounds = useRecoilValue(numRoundsState);
+
   return (
     <div className="w-full flex flex-col space-y-2 > *">
-      {[...Array(roundIndex + 1)].map((_, i) => (
-        <div
-          className="flex w-full items-center justify-center space-x-2 > * animate-fade-in-fast"
-          key={i}
-        >
-          {[...Array(wordsPerRound)].map((_, j) => {
-            const index = i * wordsPerRound + j;
-            const word = completedWords[index];
-            const img =
-              word === undefined ? null : (
-                <motion.img
-                  src={`word-images/${wordListKey}/${word}.${imageFormat}`}
-                  alt={word}
-                  className="object-cover rounded-lg transition-opacity"
-                  layoutId={`word-image-${word}`}
-                />
-              );
-            return <ImageTile key={index}>{img}</ImageTile>;
-          })}
-          ,
-        </div>
-      ))}
+      {[...Array(roundIndex + 1)].map((_, i) => {
+        const previousRowsCount = roundIndex * wordsPerRound;
+        const totalRemaining = totalNumWords - previousRowsCount;
+        const isLastRound = numRounds === i + 1;
+        const wordsInRound = isLastRound ? Math.min(wordsPerRound, totalRemaining) : wordsPerRound;
+
+        return (
+          <div
+            className="flex w-full items-center justify-center space-x-2 > * animate-fade-in-fast"
+            key={i}
+          >
+            {[...Array(wordsInRound)].map((_, j) => {
+              const index = i * wordsPerRound + j;
+              const word = completedWords[index];
+              const img =
+                word === undefined ? null : (
+                  <motion.img
+                    src={`word-images/${wordListKey}/${word}.${imageFormat}`}
+                    alt={word}
+                    className="object-cover rounded-lg transition-opacity"
+                    layoutId={`word-image-${word}`}
+                  />
+                );
+              return <ImageTile key={index}>{img}</ImageTile>;
+            })}
+            ,
+          </div>
+        );
+      })}
     </div>
   );
 }
