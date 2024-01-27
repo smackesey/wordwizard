@@ -21,10 +21,6 @@ export const keymapKeyState = atom<Keymap>({
   key: 'keymapKey',
   default: localStorageGet('keymapKey', 'qwerty'),
 });
-export const showCompletedState = atom<boolean>({
-  key: 'showCompleted',
-  default: localStorageGet('showCompleted', false),
-});
 export const useUppercaseState = atom<boolean>({
   key: 'useUppercase',
   default: localStorageGet('useUppercase', false),
@@ -78,11 +74,8 @@ export const wordListState = selector<string[]>({
   get: ({ get }) => {
     const wordListKey = get(wordListKeyState);
     const completedWords = get(completedWordsState);
-    const showCompleted = get(showCompletedState);
     const fullWordList = WORD_LISTS.get(wordListKey)!.words;
-    return showCompleted
-      ? fullWordList
-      : fullWordList.filter((word) => !completedWords.includes(word));
+    return fullWordList.filter((word) => !completedWords.includes(word));
   },
 });
 export const imageFormatState = selector<string>({
@@ -151,7 +144,6 @@ export function KeyboardListener() {
   const [wordIndex, setWordIndex] = useRecoilState(wordIndexState);
   const [letterIndex, setLetterIndex] = useRecoilState(letterIndexState);
   const [completedWords, setCompletedWords] = useRecoilState(completedWordsState);
-  const showCompleted = useRecoilValue(showCompletedState);
   const [showWordImage, setShowWordImage] = useRecoilState(showWordImageState);
   const [demeritCount, setDemeritCount] = useRecoilState(demeritCountState);
   const [showDemeritImage, setShowDemeritImage] = useRecoilState(showDemeritImageState);
@@ -182,10 +174,6 @@ export function KeyboardListener() {
           setInLetterWave(true);
           setLetterIndex(word.length);
           letterWave(word.length, setLetterIndex, setInLetterWave, letterWaveSpeed);
-        }
-      } else if (action === 'letter-mode') {
-        if (letterIndex === -1) {
-          setLetterIndex(0);
         }
       } else if (action === 'next-letter') {
         if (letterMode) {
@@ -229,15 +217,6 @@ export function KeyboardListener() {
         if (showWordImage) {
           setShowWordImage(false);
           setCompletedWords([...completedWords, wordList[wordIndex]]);
-          if (showCompleted) {
-            const newWordIndex = cycleUncompletedWordIndex(
-              wordList,
-              completedWords,
-              wordIndex,
-              'forward',
-            )!;
-            setWordIndex(newWordIndex);
-          }
           setLetterIndex(0);
         } else if (completedWords.includes(word)) {
           setCompletedWords(completedWords.filter((completedWord) => completedWord !== word));
@@ -264,7 +243,6 @@ export function KeyboardListener() {
     letterIndex,
     completedWords,
     keymapKey,
-    showCompleted,
     showWordImage,
     showDemeritImage,
     setShowDemeritImage,

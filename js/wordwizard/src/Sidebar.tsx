@@ -11,7 +11,6 @@ import { wordsPerRoundState } from './state';
 import { numRoundsState } from './state';
 import { demeritLimitState } from './state';
 import { keymapKeyState } from './state';
-import { showCompletedState } from './state';
 import { completedWordsState } from './state';
 import { wordListKeyState } from './state';
 import { wordIndexState } from './state';
@@ -21,7 +20,6 @@ export function Sidebar() {
   const [wordIndex, setWordIndex] = useRecoilState(wordIndexState);
   const [wordListKey, setWordListKey] = useRecoilState(wordListKeyState);
   const completedWords = useRecoilValue(completedWordsState);
-  const [showCompleted, setShowCompleted] = useRecoilState(showCompletedState);
   const [useUppercase, setUseUppercase] = useRecoilState(useUppercaseState);
   const [demeritLimit, setDemeritLimit] = useRecoilState(demeritLimitState);
   const [numRounds, setNumRounds] = useRecoilState(numRoundsState);
@@ -62,12 +60,6 @@ export function Sidebar() {
           label="Letter mode"
           value={letterMode}
           setValue={setLetterMode}
-        />
-        <SettingsToggle
-          settingsKey="showCompleted"
-          label="Show completed"
-          value={showCompleted}
-          setValue={setShowCompleted}
         />
         <SettingsToggle
           settingsKey="useUppercase"

@@ -5,7 +5,6 @@ export type KeyboardLayout = KeySpec[][];
 
 export type Action =
   | 'add-demerit'
-  | 'letter-mode'
   | 'next-letter'
   | 'next-uncompleted-word'
   | 'next-word'
@@ -22,7 +21,6 @@ export const KEYMAPS: Map<Keymap, Map<string, Action>> = new Map([
     new Map([
       ['h', 'add-demerit'],
       ['u', 'toggle-completed'],
-      ['i', 'letter-mode'],
       ['j', 'previous-letter'],
       [';', 'next-letter'],
       ['l', 'previous-uncompleted-word'],
@@ -38,7 +36,6 @@ export const KEYMAPS: Map<Keymap, Map<string, Action>> = new Map([
     new Map([
       ['d', 'add-demerit'],
       ['g', 'toggle-completed'],
-      ['c', 'letter-mode'],
       ['h', 'previous-letter'],
       ['s', 'next-letter'],
       ['n', 'previous-uncompleted-word'],
