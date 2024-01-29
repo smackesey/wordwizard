@@ -41,7 +41,7 @@ export const wordsPerRoundState = atom<number>({
 export const helpModalOpenState = atom<boolean>({ key: 'helpModalOpen', default: false });
 export const wordListKeyState = atom<string>({
   key: 'wordListKey',
-  default: localStorageGet('wordListKey', 'images'),
+  default: localStorageGet('wordListKey', 'short-vowel-dalle'),
 });
 export const inLetterWaveState = atom<boolean>({ key: 'inLetterWave', default: false });
 export const letterWaveSpeedState = atom<number>({
