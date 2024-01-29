@@ -33,14 +33,14 @@ export function Sidebar() {
     <div className="bg-gray-300 p-2 w-1/4 flex flex-col">
       <div className="text-5xl font-bold mb-2">Words</div>
       <div className="space-y-2 > * overflow-y-scroll">
-        {wordList.map((word, i) => {
+        {wordList.map((wordRecord, i) => {
           const borderClasses = i === wordIndex ? 'border-2 border-black rounded-md' : '';
           return (
             <div className={`p-1 ${borderClasses}`} key={i} onClick={() => setWordIndex(i)}>
               <Word
-                word={word}
+                word={wordRecord.word}
                 useUppercase={useUppercase}
-                dimmed={completedWords.includes(word)}
+                dimmed={completedWords.includes(wordRecord.word)}
               />
             </div>
           );

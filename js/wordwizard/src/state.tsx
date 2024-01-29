@@ -7,7 +7,7 @@ import { atom, selector, useRecoilState, useRecoilValue } from 'recoil';
 import { ADD_DEMERIT_SOUND, MOVE_LETTER_SOUND, playSound, WORD_COMPLETE_SOUND } from './audio';
 import { KeyboardLayout, KEYBOARD_LAYOUTS, Keymap, KEYMAPS } from './keymaps';
 import { localStorageGet } from './settings';
-import { WORD_LISTS } from './words';
+import { WordListRecord, WORD_LISTS } from './words';
 
 // ****************************************************************************
 // ***** TYPES ****************************************************************
@@ -51,7 +51,10 @@ export const letterWaveSpeedState = atom<number>({
 
 // ----- TRANSIENT
 
-export const completedWordsState = atom<string[]>({ key: 'completedWords', default: [] });
+export const completedWordRecordsState = atom<WordListRecord[]>({
+  key: 'completedWordRecords',
+  default: [],
+});
 export const demeritCountState = atom<number>({ key: 'demeritCount', default: 0 });
 export const letterIndexState = atom<number>({ key: 'letterIndex', default: 0 });
 export const showDemeritImageState = atom<boolean>({ key: 'showDemeritImage', default: false });
@@ -60,6 +63,13 @@ export const wordIndexState = atom<number>({ key: 'wordIndex', default: 0 });
 
 // ----- COMPUTED
 
+export const completedWordsState = selector<string[]>({
+  key: 'completedWords',
+  get: ({ get }) => {
+    const completedWordRecords = get(completedWordRecordsState);
+    return completedWordRecords.map((record) => record.word);
+  },
+});
 export const roundIndexState = selector<number>({
   key: 'roundIndex',
   get: ({ get }) => {
@@ -69,23 +79,16 @@ export const roundIndexState = selector<number>({
     return Math.min(Math.floor(completedWords.length / wordsPerRound), numRounds - 1);
   },
 });
-export const wordListState = selector<string[]>({
+export const wordListState = selector<WordListRecord[]>({
   key: 'wordList',
   get: ({ get }) => {
     const wordListKey = get(wordListKeyState);
     const completedWords = get(completedWordsState);
-    const fullWordList = WORD_LISTS.get(wordListKey)!.words;
-    return fullWordList.filter((word) => !completedWords.includes(word));
+    const fullWordList = WORD_LISTS.get(wordListKey)!;
+    return fullWordList.filter((entry) => !completedWords.includes(entry.word));
   },
 });
-export const imageFormatState = selector<string>({
-  key: 'imageFormat',
-  get: ({ get }) => {
-    const wordListKey = get(wordListKeyState);
-    return WORD_LISTS.get(wordListKey)!.imageFormat;
-  },
-});
-export const wordState = selector<string>({
+export const wordRecordState = selector<WordListRecord>({
   key: 'word',
   get: ({ get }) => {
     const wordList = get(wordListState);
@@ -127,7 +130,7 @@ export const totalNumWordsState = selector<number>({
   key: 'totalNumWords',
   get: ({ get }) => {
     const wordListKey = get(wordListKeyState);
-    const fullWordList = WORD_LISTS.get(wordListKey)!.words;
+    const fullWordList = WORD_LISTS.get(wordListKey)!;
     const numRounds = get(numRoundsState);
     const wordsPerRound = get(wordsPerRoundState);
     const userSpecified = numRounds * wordsPerRound;
@@ -143,7 +146,8 @@ export function KeyboardListener() {
   const wordListKey = useRecoilValue(wordListKeyState);
   const [wordIndex, setWordIndex] = useRecoilState(wordIndexState);
   const [letterIndex, setLetterIndex] = useRecoilState(letterIndexState);
-  const [completedWords, setCompletedWords] = useRecoilState(completedWordsState);
+  const [completedWordRecords, setCompletedWordRecords] = useRecoilState(completedWordRecordsState);
+  const completedWords = useRecoilValue(completedWordsState);
   const [showWordImage, setShowWordImage] = useRecoilState(showWordImageState);
   const [demeritCount, setDemeritCount] = useRecoilState(demeritCountState);
   const [showDemeritImage, setShowDemeritImage] = useRecoilState(showDemeritImageState);
@@ -157,7 +161,7 @@ export function KeyboardListener() {
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const word = wordList[wordIndex];
+      const word = wordList[wordIndex].word;
       const keymap = KEYMAPS.get(keymapKey)!;
       const action = keymap.get(event.key);
 
@@ -216,16 +220,18 @@ export function KeyboardListener() {
       } else if (action === 'toggle-completed') {
         if (showWordImage) {
           setShowWordImage(false);
-          setCompletedWords([...completedWords, wordList[wordIndex]]);
+          setCompletedWordRecords([...completedWordRecords, wordList[wordIndex]]);
           setLetterIndex(0);
         } else if (completedWords.includes(word)) {
-          setCompletedWords(completedWords.filter((completedWord) => completedWord !== word));
+          setCompletedWordRecords(
+            completedWordRecords.filter((completedWordRecord) => completedWordRecord.word !== word),
+          );
         } else {
           playSound(WORD_COMPLETE_SOUND);
           setShowWordImage(true);
         }
       } else if (action === 'reset') {
-        setCompletedWords([]);
+        setCompletedWordRecords([]);
         setWordIndex(0);
         setLetterIndex(0);
       }
@@ -242,11 +248,12 @@ export function KeyboardListener() {
     wordIndex,
     letterIndex,
     completedWords,
+    completedWordRecords,
     keymapKey,
     showWordImage,
     showDemeritImage,
     setShowDemeritImage,
-    setCompletedWords,
+    setCompletedWordRecords,
     setWordIndex,
     setShowWordImage,
     setLetterIndex,
@@ -289,7 +296,7 @@ function letterWave(
 }
 
 function cycleUncompletedWordIndex(
-  wordList: string[],
+  wordList: WordListRecord[],
   completedWords: string[],
   wordIndex: number,
   direction: Direction,
@@ -298,14 +305,14 @@ function cycleUncompletedWordIndex(
     return undefined;
   } else {
     let newIndex = cycleWordIndex(wordList, wordIndex, direction)!;
-    while (completedWords.includes(wordList[newIndex])) {
+    while (completedWords.includes(wordList[newIndex].word)) {
       newIndex = cycleWordIndex(wordList, newIndex, direction)!;
     }
     return newIndex;
   }
 }
 
-function cycleWordIndex(wordList: string[], wordIndex: number, direction: Direction) {
+function cycleWordIndex(wordList: WordListRecord[], wordIndex: number, direction: Direction) {
   if (direction === 'forward') {
     return wordIndex === wordList.length - 1 ? 0 : wordIndex + 1;
   } else {

@@ -14,19 +14,18 @@ import {
   GameStatus,
   gameStatusState,
   helpModalOpenState,
-  imageFormatState,
   inLetterWaveState,
   letterIndexState,
   letterModeState,
   showDemeritImageState,
   showWordImageState,
   useUppercaseState,
-  wordListKeyState,
-  wordState,
+  wordRecordState,
 } from './state';
+import { WordListRecord } from './words';
 
 export function Board() {
-  const word = useRecoilValue(wordState);
+  const wordRecord = useRecoilValue(wordRecordState);
   const letterIndex = useRecoilValue(letterIndexState);
   const showWordImage = useRecoilValue(showWordImageState);
   const showDemeritImage = useRecoilValue(showDemeritImageState);
@@ -56,16 +55,15 @@ export function Board() {
     );
   } else {
     const markedIndex = (letterMode || inLetterWave) && !showWordImage ? letterIndex : undefined;
-    // const markedIndex = showWordImage ? undefined : letterIndex;
     mainPanel = (
       <>
         <div className="h-[40%] w-[600px] flex flex-col items-center justify-center">
-          {showWordImage ? <WordImage word={word} /> : null}
+          {showWordImage ? <WordImage wordRecord={wordRecord} /> : null}
         </div>
         <div className="flex flex-col space-y-2 > *">
           <div className="h-24 flex flex-col justify-end">
             <Word
-              word={word}
+              word={wordRecord.word}
               useUppercase={useUppercase}
               markedIndex={markedIndex}
               inLetterWave={inLetterWave}
@@ -90,14 +88,12 @@ export function Board() {
   );
 }
 
-function WordImage({ word }: { word: string }) {
-  const wordListKey = useRecoilValue(wordListKeyState);
-  const imageFormat = useRecoilValue(imageFormatState);
+function WordImage({ wordRecord }: { wordRecord: WordListRecord }) {
   return (
     <motion.img
-      layoutId={`word-image-${word}`}
-      src={`word-images/${wordListKey}/${word}.${imageFormat}`}
-      alt={word}
+      layoutId={`word-image-${wordRecord.word}`}
+      src={wordRecord.path}
+      alt={wordRecord.word}
       className="rounded-3xl animate-fade-in min-h-0 object-contain border-black border-2"
     />
   );

@@ -5,24 +5,23 @@
 import { motion } from 'framer-motion';
 import { useRecoilValue } from 'recoil';
 import {
-  completedWordsState,
+  completedWordRecordsState,
   demeritCountState,
   demeritLimitState,
-  imageFormatState,
   numRoundsState,
   roundIndexState,
   totalNumWordsState,
-  wordListKeyState,
   wordsPerRoundState,
 } from './state';
+import { WordListRecord } from './words';
 
 export function Scoreboard() {
-  const completedWords = useRecoilValue(completedWordsState);
+  const completedWordRecords = useRecoilValue(completedWordRecordsState);
   const roundIndex = useRecoilValue(roundIndexState);
   const demeritCount = useRecoilValue(demeritCountState);
   const demeritLimit = useRecoilValue(demeritLimitState);
   const wordsPerRound = useRecoilValue(wordsPerRoundState);
-  const completedWordsInRound = completedWords.length % wordsPerRound;
+  const completedWordsInRound = completedWordRecords.length % wordsPerRound;
   const totalNumWords = useRecoilValue(totalNumWordsState);
 
   return (
@@ -34,14 +33,14 @@ export function Scoreboard() {
       "
     >
       <div className="text-3xl font-bold flex w-full mb-2 space-x-1 > *">
-        <Fraction numerator={completedWords.length} denominator={totalNumWords} />
+        <Fraction numerator={completedWordRecords.length} denominator={totalNumWords} />
         <div className="text-center flex-grow">Score</div>
         <Fraction numerator={completedWordsInRound} denominator={wordsPerRound} />
       </div>
       <CardCollection
         roundIndex={roundIndex}
         wordsPerRound={wordsPerRound}
-        completedWords={completedWords}
+        completedWordRecords={completedWordRecords}
       />
       <hr className="h-[2px] flex-shrink-0 border-none bg-black rounded-md w-full" />
       <DemeritMeter demeritLimit={demeritLimit} demeritCount={demeritCount} />
@@ -60,14 +59,12 @@ function Fraction({ numerator, denominator }: { numerator: number; denominator: 
 function CardCollection({
   roundIndex,
   wordsPerRound,
-  completedWords,
+  completedWordRecords,
 }: {
   roundIndex: number;
   wordsPerRound: number;
-  completedWords: string[];
+  completedWordRecords: WordListRecord[];
 }) {
-  const wordListKey = useRecoilValue(wordListKeyState);
-  const imageFormat = useRecoilValue(imageFormatState);
   const totalNumWords = useRecoilValue(totalNumWordsState);
   const numRounds = useRecoilValue(numRoundsState);
 
@@ -86,14 +83,14 @@ function CardCollection({
           >
             {[...Array(wordsInRound)].map((_, j) => {
               const index = i * wordsPerRound + j;
-              const word = completedWords[index];
+              const wordRecord = completedWordRecords[index];
               const img =
-                word === undefined ? null : (
+                wordRecord === undefined ? null : (
                   <motion.img
-                    src={`word-images/${wordListKey}/${word}.${imageFormat}`}
-                    alt={word}
+                    src={wordRecord.path}
+                    alt={wordRecord.word}
                     className="object-cover rounded-lg transition-opacity"
-                    layoutId={`word-image-${word}`}
+                    layoutId={`word-image-${wordRecord.word}`}
                   />
                 );
               return <ImageTile key={index}>{img}</ImageTile>;
