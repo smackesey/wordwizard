@@ -2,7 +2,7 @@
 // ##### SCOREBOARD
 // ########################
 
-import { motion } from 'framer-motion';
+import { motion, MotionStyle } from 'framer-motion';
 import { useRecoilValue } from 'recoil';
 import {
   completedWordRecordsState,
@@ -67,6 +67,7 @@ function CardCollection({
 }) {
   const totalNumWords = useRecoilValue(totalNumWordsState);
   const numRounds = useRecoilValue(numRoundsState);
+  const tileSize = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
 
   return (
     <div className="w-full flex flex-col space-y-2 > *">
@@ -89,7 +90,11 @@ function CardCollection({
                   <motion.img
                     src={wordRecord.path}
                     alt={wordRecord.word}
-                    className="object-cover rounded-lg transition-opacity"
+                    style={
+                      { 'max-height': `${tileSize}vh`, 'max-width': `${tileSize}vh` } as MotionStyle
+                    }
+                    // className="object-cover rounded-lg transition-opacity"
+                    className="object-fill rounded-lg transition-opacity"
                     layoutId={`word-image-${wordRecord.word}`}
                   />
                 );
@@ -131,11 +136,16 @@ function DemeritMeter({
 export function ImageTile({ children }: { children: React.ReactNode }) {
   const numRounds = useRecoilValue(numRoundsState);
   const tileSize = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
-  const style = { width: `${tileSize}vh` };
-  console.log('children', children);
+  const style = children
+    ? { 'max-width': `${tileSize}vh`, 'max-height': `${tileSize}vh` }
+    : { width: `${tileSize}vh` };
   const squareClass = children ? '' : 'square';
   return (
-    <motion.div layout style={style} className={`${squareClass} rounded-lg border-2 border-black`}>
+    <motion.div
+      layout
+      style={style as MotionStyle}
+      className={`${squareClass} rounded-lg border-2 border-black`}
+    >
       {children}
     </motion.div>
   );
