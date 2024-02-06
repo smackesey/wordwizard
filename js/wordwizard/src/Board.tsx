@@ -3,6 +3,7 @@
 // ########################
 
 import { motion } from 'framer-motion';
+import React from 'react';
 
 import { useRecoilValue } from 'recoil';
 import { playSound, VICTORY_SONG } from './audio';
@@ -22,7 +23,7 @@ import {
   useUppercaseState,
   wordRecordState,
 } from './state';
-import { WordListRecord } from './words';
+import { FALLBACK_IMAGE, WordListRecord } from './words';
 
 export function Board() {
   const wordRecord = useRecoilValue(wordRecordState);
@@ -89,12 +90,14 @@ export function Board() {
 }
 
 function WordImage({ wordRecord }: { wordRecord: WordListRecord }) {
+  const [imageSrc, setImageSrc] = React.useState(wordRecord.path);
   return (
     <motion.img
       layoutId={`word-image-${wordRecord.word}`}
-      src={wordRecord.path}
+      src={imageSrc}
       alt={wordRecord.word}
       className="rounded-3xl animate-fade-in min-h-0 object-contain border-black border-2"
+      onError={() => setImageSrc(FALLBACK_IMAGE)}
     />
   );
 }

@@ -9,6 +9,8 @@ function shuffle(array: string[]) {
   return array;
 }
 
+export const FALLBACK_IMAGE = 'fallback.jpg';
+
 function normalizeWordList({
   paths,
   imagePathToWordFn,

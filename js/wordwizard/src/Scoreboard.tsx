@@ -2,7 +2,8 @@
 // ##### SCOREBOARD
 // ########################
 
-import { motion, MotionStyle } from 'framer-motion';
+import { motion } from 'framer-motion';
+import React from 'react';
 import { useRecoilValue } from 'recoil';
 import {
   completedWordRecordsState,
@@ -13,7 +14,7 @@ import {
   totalNumWordsState,
   wordsPerRoundState,
 } from './state';
-import { WordListRecord } from './words';
+import { FALLBACK_IMAGE, WordListRecord } from './words';
 
 export function Scoreboard() {
   const completedWordRecords = useRecoilValue(completedWordRecordsState);
@@ -67,7 +68,7 @@ function CardCollection({
 }) {
   const totalNumWords = useRecoilValue(totalNumWordsState);
   const numRounds = useRecoilValue(numRoundsState);
-  const tileSize = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
+  const tileSize = getTileSize(numRounds);
 
   return (
     <div className="w-full flex flex-col space-y-2 > *">
@@ -85,18 +86,10 @@ function CardCollection({
             {[...Array(wordsInRound)].map((_, j) => {
               const index = i * wordsPerRound + j;
               const wordRecord = completedWordRecords[index];
+              // subtract 4px for the border of the frame
               const img =
                 wordRecord === undefined ? null : (
-                  <motion.img
-                    src={wordRecord.path}
-                    alt={wordRecord.word}
-                    style={
-                      { 'max-height': `${tileSize}vh`, 'max-width': `${tileSize}vh` } as MotionStyle
-                    }
-                    // className="object-cover rounded-lg transition-opacity"
-                    className="object-fill rounded-lg transition-opacity"
-                    layoutId={`word-image-${wordRecord.word}`}
-                  />
+                  <InnerImage wordRecord={wordRecord} tileSize={tileSize} />
                 );
               return <ImageTile key={index}>{img}</ImageTile>;
             })}
@@ -133,19 +126,34 @@ function DemeritMeter({
   );
 }
 
+function InnerImage({ wordRecord, tileSize }: { wordRecord: WordListRecord; tileSize: string }) {
+  const [imageSrc, setImageSrc] = React.useState(wordRecord.path);
+  const style = { maxWidth: `calc(${tileSize} - 4px)`, maxHeight: `calc(${tileSize} - 4px)` };
+  return (
+    <motion.img
+      src={imageSrc}
+      alt={wordRecord.word}
+      style={style}
+      className="rounded-lg transition-opacity object-contain w-full h-full"
+      layoutId={`word-image-${wordRecord.word}`}
+      onError={() => setImageSrc(FALLBACK_IMAGE)}
+    />
+  );
+}
+
+function getTileSize(numRounds: number) {
+  const num = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
+  return `${num}vh`;
+}
+
 export function ImageTile({ children }: { children: React.ReactNode }) {
   const numRounds = useRecoilValue(numRoundsState);
-  const tileSize = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
-  const style = children
-    ? { 'max-width': `${tileSize}vh`, 'max-height': `${tileSize}vh` }
-    : { width: `${tileSize}vh` };
-  const squareClass = children ? '' : 'square';
+  const tileSize = getTileSize(numRounds);
+  const style = children ? {} : { width: tileSize };
+  const classes = children ? '' : 'square';
+
   return (
-    <motion.div
-      layout
-      style={style as MotionStyle}
-      className={`${squareClass} rounded-lg border-2 border-black`}
-    >
+    <motion.div layout style={style} className={`${classes} rounded-lg border-2 border-black`}>
       {children}
     </motion.div>
   );
