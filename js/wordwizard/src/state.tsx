@@ -137,6 +137,14 @@ export const totalNumWordsState = selector<number>({
     return Math.min(fullWordList.length, userSpecified);
   },
 });
+export const tileSizeState = selector<string>({
+  key: 'tileSize',
+  get: ({ get }) => {
+    const numRounds = get(numRoundsState);
+    const num = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
+    return `${num}vh`;
+  },
+});
 
 // ****************************************************************************
 // ***** STATE TRANSITIONS ****************************************************
