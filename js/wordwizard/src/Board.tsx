@@ -18,7 +18,7 @@ import {
   inLetterWaveState,
   letterIndexState,
   letterModeState,
-  selectedWordImageState,
+  scoreboardSelectedWordRecordState,
   showDemeritImageState,
   showFullBoardImageState,
   showWordImageState,
@@ -106,12 +106,12 @@ function WordImage({ wordRecord }: { wordRecord: WordListRecord }) {
 function FullBoardImage() {
   const showDemeritImage = useRecoilValue(showDemeritImageState);
   const demeritCount = useRecoilValue(demeritCountState);
-  const selectedWordImage = useRecoilValue(selectedWordImageState);
-  let img;
+  const scoreboardSelectedWordRecord = useRecoilValue(scoreboardSelectedWordRecordState);
+  let content;
   const classes =
     'rounded-3xl animate-fade-in-fast min-h-0 border-black border-2 justify-self-center';
   if (showDemeritImage) {
-    img = (
+    content = (
       <motion.img
         layoutId={`demerit-image-${demeritCount}`}
         src="demerit.png"
@@ -119,13 +119,22 @@ function FullBoardImage() {
         className={classes}
       />
     );
-  } else if (selectedWordImage) {
-    img = <img src={selectedWordImage} alt={selectedWordImage} className={classes} />;
+  } else if (scoreboardSelectedWordRecord) {
+    content = (
+      <>
+        <Word word={scoreboardSelectedWordRecord.word} useUppercase={false} />
+        <img
+          src={scoreboardSelectedWordRecord.path}
+          alt={scoreboardSelectedWordRecord.word}
+          className={classes}
+        />
+      </>
+    );
   }
   return (
     <>
       <div className="flex-grow" />
-      {img}
+      {content}
       <div className="flex-grow" />
     </>
   );

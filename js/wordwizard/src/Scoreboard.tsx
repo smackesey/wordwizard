@@ -11,7 +11,7 @@ import {
   demeritLimitState,
   numRoundsState,
   roundIndexState,
-  selectedWordImageState,
+  scoreboardSelectedIndexState,
   tileSizeState,
   totalNumWordsState,
   wordsPerRoundState,
@@ -70,6 +70,9 @@ function CardCollection({
 }) {
   const totalNumWords = useRecoilValue(totalNumWordsState);
   const numRounds = useRecoilValue(numRoundsState);
+  const [scoreboardSelectedIndex, setScoreboardSelectedIndex] = useRecoilState(
+    scoreboardSelectedIndexState,
+  );
 
   return (
     <div className="w-full flex flex-col space-y-2 > *">
@@ -87,9 +90,15 @@ function CardCollection({
             {[...Array(wordsInRound)].map((_, j) => {
               const index = i * wordsPerRound + j;
               const wordRecord = completedWordRecords[index];
+              const isSelected = index === scoreboardSelectedIndex;
+              const onClick = wordRecord
+                ? () => setScoreboardSelectedIndex(isSelected ? undefined : index)
+                : undefined;
+              console.log('scoreboardSelectedIndex', scoreboardSelectedIndex);
+
               // subtract 4px for the border of the frame
               return (
-                <ImageTile key={index}>
+                <ImageTile key={index} isSelected={isSelected} onClick={onClick}>
                   {wordRecord === undefined ? null : (
                     <InnerImage
                       src={wordRecord.path}
@@ -129,7 +138,6 @@ function DemeritMeter({
 }
 
 function InnerImage({ src, alt, layoutId }: { src: string; alt: string; layoutId: string }) {
-  const [selectedWordImage, setSelectedWordImage] = useRecoilState(selectedWordImageState);
   const [imageSrc, setImageSrc] = React.useState(src);
   const tileSize = useRecoilValue(tileSizeState);
   const style = { maxWidth: `calc(${tileSize} - 4px)`, maxHeight: `calc(${tileSize} - 4px)` };
@@ -141,16 +149,30 @@ function InnerImage({ src, alt, layoutId }: { src: string; alt: string; layoutId
       className="rounded-lg transition-opacity object-contain w-full h-full"
       layoutId={layoutId}
       onError={() => setImageSrc(FALLBACK_IMAGE)}
-      onClick={() => setSelectedWordImage(selectedWordImage === imageSrc ? undefined : imageSrc)}
     />
   );
 }
 
-export function ImageTile({ children }: { children: React.ReactNode }) {
+export function ImageTile({
+  children,
+  isSelected,
+  onClick,
+}: {
+  children: React.ReactNode;
+  isSelected?: boolean;
+  onClick?: () => void;
+}) {
   const tileSize = useRecoilValue(tileSizeState);
   const style = children ? {} : { width: tileSize, height: tileSize };
+  const cursorClass = onClick ? 'cursor-pointer' : '';
+  const borderClass = isSelected ? 'border-yellow-500' : 'border-black';
   return (
-    <motion.div layout style={style} className="rounded-lg border-2 border-black">
+    <motion.div
+      layout
+      style={style}
+      className={`rounded-lg border-2 ${borderClass} ${cursorClass}`}
+      onClick={onClick}
+    >
       {children}
     </motion.div>
   );

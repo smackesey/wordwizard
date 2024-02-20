@@ -57,11 +57,11 @@ export const completedWordRecordsState = atom<WordListRecord[]>({
 });
 export const demeritCountState = atom<number>({ key: 'demeritCount', default: 0 });
 export const letterIndexState = atom<number>({ key: 'letterIndex', default: 0 });
-export const showDemeritImageState = atom<boolean>({ key: 'showDemeritImage', default: false });
-export const selectedWordImageState = atom<string | undefined>({
-  key: 'selectedWordImage',
+export const scoreboardSelectedIndexState = atom<number | undefined>({
+  key: 'scoreboardSelectedIndex',
   default: undefined,
 });
+export const showDemeritImageState = atom<boolean>({ key: 'showDemeritImage', default: false });
 export const showWordImageState = atom<boolean>({ key: 'showWordImage', default: false });
 export const wordIndexState = atom<number>({ key: 'wordIndex', default: 0 });
 
@@ -149,10 +149,20 @@ export const tileSizeState = selector<string>({
     return `${num}vh`;
   },
 });
+export const scoreboardSelectedWordRecordState = selector<WordListRecord | undefined>({
+  key: 'scoreboardSelectedWordRecord',
+  get: ({ get }) => {
+    const scoreboardSelectedIndex = get(scoreboardSelectedIndexState);
+    const completedWords = get(completedWordRecordsState);
+    return scoreboardSelectedIndex !== undefined
+      ? completedWords[scoreboardSelectedIndex]
+      : undefined;
+  },
+});
 export const showFullBoardImageState = selector<boolean>({
   key: 'showFullBoardImage',
   get: ({ get }) => {
-    return get(showDemeritImageState) || get(selectedWordImageState) !== undefined;
+    return get(showDemeritImageState) || get(scoreboardSelectedIndexState) !== undefined;
   },
 });
 
