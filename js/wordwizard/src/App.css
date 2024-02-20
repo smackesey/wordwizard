@@ -37,6 +37,25 @@
   }
 }
 
+.animate-fade-out {
+  animation: fadeOut 2s linear 1;
+  animation-fill-mode: forwards;
+}
+
+.animate-fade-out-fast {
+  animation: fadeOut 0.5s linear 1;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 .square {
   aspect-ratio: 1/1;
   display: grid;

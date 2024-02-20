@@ -18,7 +18,9 @@ import {
   inLetterWaveState,
   letterIndexState,
   letterModeState,
+  selectedWordImageState,
   showDemeritImageState,
+  showFullBoardImageState,
   showWordImageState,
   useUppercaseState,
   wordRecordState,
@@ -29,20 +31,19 @@ export function Board() {
   const wordRecord = useRecoilValue(wordRecordState);
   const letterIndex = useRecoilValue(letterIndexState);
   const showWordImage = useRecoilValue(showWordImageState);
-  const showDemeritImage = useRecoilValue(showDemeritImageState);
+  const showFullBoardImage = useRecoilValue(showFullBoardImageState);
   const useUppercase = useRecoilValue(useUppercaseState);
-  const demeritCount = useRecoilValue(demeritCountState);
   const gameStatus = useRecoilValue(gameStatusState);
   const helpModalOpen = useRecoilValue(helpModalOpenState);
   const inLetterWave = useRecoilValue(inLetterWaveState);
   const letterMode = useRecoilValue(letterModeState);
 
   let mainPanel;
-  if (showDemeritImage) {
+  if (showFullBoardImage) {
     mainPanel = (
       <>
         <div className="flex-grow" />
-        <DemeritImage index={demeritCount} />
+        <FullBoardImage />
         <div className="flex-grow" />
       </>
     );
@@ -102,14 +103,31 @@ function WordImage({ wordRecord }: { wordRecord: WordListRecord }) {
   );
 }
 
-function DemeritImage({ index }: { index: number }) {
+function FullBoardImage() {
+  const showDemeritImage = useRecoilValue(showDemeritImageState);
+  const demeritCount = useRecoilValue(demeritCountState);
+  const selectedWordImage = useRecoilValue(selectedWordImageState);
+  let img;
+  const classes =
+    'rounded-3xl animate-fade-in-fast min-h-0 border-black border-2 justify-self-center';
+  if (showDemeritImage) {
+    img = (
+      <motion.img
+        layoutId={`demerit-image-${demeritCount}`}
+        src="demerit.png"
+        alt="demerit"
+        className={classes}
+      />
+    );
+  } else if (selectedWordImage) {
+    img = <img src={selectedWordImage} alt={selectedWordImage} className={classes} />;
+  }
   return (
-    <motion.img
-      layoutId={`demerit-image-${index}`}
-      src="demerit.png"
-      alt="demerit"
-      className="rounded-3xl animate-fade-in min-h-0 border-black border-2 justify-self-center"
-    />
+    <>
+      <div className="flex-grow" />
+      {img}
+      <div className="flex-grow" />
+    </>
   );
 }
 

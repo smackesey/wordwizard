@@ -58,6 +58,10 @@ export const completedWordRecordsState = atom<WordListRecord[]>({
 export const demeritCountState = atom<number>({ key: 'demeritCount', default: 0 });
 export const letterIndexState = atom<number>({ key: 'letterIndex', default: 0 });
 export const showDemeritImageState = atom<boolean>({ key: 'showDemeritImage', default: false });
+export const selectedWordImageState = atom<string | undefined>({
+  key: 'selectedWordImage',
+  default: undefined,
+});
 export const showWordImageState = atom<boolean>({ key: 'showWordImage', default: false });
 export const wordIndexState = atom<number>({ key: 'wordIndex', default: 0 });
 
@@ -143,6 +147,12 @@ export const tileSizeState = selector<string>({
     const numRounds = get(numRoundsState);
     const num = Math.min(Math.floor(40 / (numRounds + 1)), 8) - 1;
     return `${num}vh`;
+  },
+});
+export const showFullBoardImageState = selector<boolean>({
+  key: 'showFullBoardImage',
+  get: ({ get }) => {
+    return get(showDemeritImageState) || get(selectedWordImageState) !== undefined;
   },
 });
 

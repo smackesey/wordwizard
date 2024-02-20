@@ -4,13 +4,14 @@
 
 import { motion } from 'framer-motion';
 import React from 'react';
-import { useRecoilValue } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import {
   completedWordRecordsState,
   demeritCountState,
   demeritLimitState,
   numRoundsState,
   roundIndexState,
+  selectedWordImageState,
   tileSizeState,
   totalNumWordsState,
   wordsPerRoundState,
@@ -128,6 +129,7 @@ function DemeritMeter({
 }
 
 function InnerImage({ src, alt, layoutId }: { src: string; alt: string; layoutId: string }) {
+  const [selectedWordImage, setSelectedWordImage] = useRecoilState(selectedWordImageState);
   const [imageSrc, setImageSrc] = React.useState(src);
   const tileSize = useRecoilValue(tileSizeState);
   const style = { maxWidth: `calc(${tileSize} - 4px)`, maxHeight: `calc(${tileSize} - 4px)` };
@@ -139,6 +141,7 @@ function InnerImage({ src, alt, layoutId }: { src: string; alt: string; layoutId
       className="rounded-lg transition-opacity object-contain w-full h-full"
       layoutId={layoutId}
       onError={() => setImageSrc(FALLBACK_IMAGE)}
+      onClick={() => setSelectedWordImage(selectedWordImage === imageSrc ? undefined : imageSrc)}
     />
   );
 }
